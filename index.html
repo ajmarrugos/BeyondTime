@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Beyond Time</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              accent: 'var(--accent-color)',
+            }
+          }
+        }
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent-color: #6366f1; /* Default: Indigo-500 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(10vw, -15vh) rotate(90deg); }
+            50% { transform: translate(-15vw, 10vh) rotate(180deg); }
+            75% { transform: translate(5vw, 20vh) rotate(270deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+        @keyframes float2 {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-12vw, 10vh) rotate(-90deg); }
+            50% { translate(10vw, -12vh) rotate(-180deg); }
+            75% { transform: translate(-5vw, -15vh) rotate(-270deg); }
+            100% { transform: translate(0, 0) rotate(-360deg); }
+        }
+
+        @keyframes fly-out {
+            to {
+                transform: translateY(-100px) scale(0.9);
+                opacity: 0;
+            }
+        }
+
+        .routine-card-fly-out {
+            animation: fly-out 0.4s ease-in forwards;
+        }
+
+        @keyframes glow-and-fade {
+            0% {
+                transform: translateY(20%) scale(1);
+                opacity: 0;
+            }
+            20% {
+                transform: translateY(0) scale(1.2);
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-10%) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        .clock-glow-effect {
+            position: absolute;
+            bottom: -50%;
+            left: 10%;
+            right: 10%;
+            height: 100%;
+            background: radial-gradient(circle at bottom, var(--accent-color) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+            animation: glow-and-fade 1.5s ease-out forwards;
+        }
+
+        @keyframes pulse {
+            50% {
+                opacity: .5;
+            }
+        }
+
+        @keyframes live-glow {
+            0% {
+                box-shadow: 0 0 5px rgba(var(--glow-color-rgb), 0.2), 0 0 10px rgba(var(--glow-color-rgb), 0.1), inset 0 0 5px rgba(var(--glow-color-rgb), 0.1);
+                border-color: rgba(var(--glow-color-rgb), 0.2);
+            }
+            50% {
+                box-shadow: 0 0 15px rgba(var(--glow-color-rgb), 0.5), 0 0 30px rgba(var(--glow-color-rgb), 0.2), inset 0 0 10px rgba(var(--glow-color-rgb), 0.2);
+                border-color: rgba(var(--glow-color-rgb), 0.5);
+            }
+            100% {
+                box-shadow: 0 0 5px rgba(var(--glow-color-rgb), 0.2), 0 0 10px rgba(var(--glow-color-rgb), 0.1), inset 0 0 5px rgba(var(--glow-color-rgb), 0.1);
+                border-color: rgba(var(--glow-color-rgb), 0.2);
+            }
+        }
+        
+        @keyframes toast-in {
+            from {
+                transform: translateX(calc(100% + 1.5rem));
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-enter {
+            animation: toast-in 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+        }
+
+        /* Custom scrollbar for desktop */
+        @media (min-width: 1025px) {
+            ::-webkit-scrollbar {
+                width: 16px;
+                height: 16px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background-color: var(--accent-color);
+                border-radius: 20px;
+                border: 4px solid transparent;
+                background-clip: content-box;
+            }
+            
+            ::-webkit-scrollbar-thumb:hover {
+                 background-color: var(--accent-color);
+                 opacity: 0.8;
+            }
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+</head>
+<body class="bg-slate-950">
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="portal-root"></div>
+    <div id="root"></div>
+    <script defer src="/bundle.js"></script>
+</body>
+</html>

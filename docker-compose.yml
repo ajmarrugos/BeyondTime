@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # --- Your React Frontend Service ---
+  webapp:
+    container_name: beyond_time_webapp
+    # Build the image from the Dockerfile in the current directory.
+    build:
+      context: .
+    ports:
+      # Map port 8080 on your host machine to port 80 inside the container.
+      # You'll access the app at http://localhost:8080
+      - "8080:80"
+    restart: unless-stopped
+
+  # --- The n8n Service ---
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n_service
+    ports:
+      - "5678:5678"
+    environment:
+      # Set a timezone for n8n to ensure scheduled workflows run correctly.
+      - TZ=America/New_York
+      # IMPORTANT: This allows your webapp (running on localhost:8080)
+      # to make API calls to n8n without being blocked by browser security (CORS).
+      - N8N_CORS_ALLOWED_ORIGINS=http://localhost:8080
+    volumes:
+      # This saves your n8n data (workflows, credentials) on your host machine
+      # in a hidden folder inside your user's home directory. This means your
+      # data persists even if you stop or remove the n8n container.
+      - ~/.n8n:/home/node/.n8n
+    restart: unless-stopped

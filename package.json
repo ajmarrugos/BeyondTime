@@ -1,0 +1,29 @@
+{
+  "name": "beyond-time",
+  "version": "1.0.0",
+  "description": "An elegant application to manage time, resources, routines, and events.",
+  "main": "index.tsx",
+  "scripts": {
+    "build": "esbuild index.tsx --bundle --outfile=dist/bundle.js --jsx=automatic --minify && cp index.html dist/index.html",
+    "dev": "live-server --entry-file=index.html"
+  },
+  "keywords": [
+    "react",
+    "typescript",
+    "material-design",
+    "docker"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "esbuild": "^0.23.0",
+    "live-server": "^1.2.2",
+    "typescript": "^5.5.3"
+  }
+}
