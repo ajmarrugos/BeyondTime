@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 
-interface MetricItemProps {
+interface Metric {
     value: number;
     label: string;
     icon?: React.ReactNode;
 }
 
-const MetricItem: React.FC<MetricItemProps> = ({ value, label, icon }) => {
+const MetricItem: React.FC<Metric> = ({ value, label, icon }) => {
     const { themeConfig } = useTheme();
     // Detailed view with icon
     if (icon) {
@@ -33,22 +33,14 @@ const MetricItem: React.FC<MetricItemProps> = ({ value, label, icon }) => {
 };
 
 
-interface RoutineMetricsProps {
-    totalRoutines: number;
-    liveNow: number;
-    completed: number;
-    totalTasks: number;
-    totalTasksOfWeek: number;
-    totalTasksOfMonth: number;
+interface SummaryMetricsProps {
+    mainMetrics: Metric[];
+    expandedMetrics: Metric[];
 }
 
-const RoutineMetrics: React.FC<RoutineMetricsProps> = ({
-    totalRoutines,
-    liveNow,
-    completed,
-    totalTasks,
-    totalTasksOfWeek,
-    totalTasksOfMonth,
+const SummaryMetrics: React.FC<SummaryMetricsProps> = ({
+    mainMetrics,
+    expandedMetrics,
 }) => {
     const { themeConfig } = useTheme();
     const [isExpanded, setIsExpanded] = useState(false);
@@ -57,9 +49,9 @@ const RoutineMetrics: React.FC<RoutineMetricsProps> = ({
         <div className="w-full max-w-3xl mx-auto mb-3 p-2 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/5">
             <div className="flex items-center">
                 <div className="flex-grow grid grid-cols-3 divide-x divide-white/10">
-                    <MetricItem value={totalRoutines} label="Routines" />
-                    <MetricItem value={liveNow} label="Live Now" />
-                    <MetricItem value={completed} label="Completed" />
+                    {mainMetrics.map(metric => (
+                        <MetricItem key={metric.label} value={metric.value} label={metric.label} />
+                    ))}
                 </div>
                 <button 
                     onClick={() => setIsExpanded(!isExpanded)} 
@@ -75,37 +67,18 @@ const RoutineMetrics: React.FC<RoutineMetricsProps> = ({
             
             <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96 mt-2 pt-3 border-t border-white/10' : 'max-h-0'}`}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 px-1">
-                    <MetricItem 
-                        value={totalTasks}
-                        label="Tasks Today"
-                        icon={
-                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                        }
-                    />
-                     <MetricItem 
-                        value={totalTasksOfWeek}
-                        label="Tasks This Week"
-                        icon={
-                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                        }
-                    />
-                     <MetricItem 
-                        value={totalTasksOfMonth}
-                        label="Tasks this Month"
-                        icon={
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        }
-                    />
+                    {expandedMetrics.map(metric => (
+                        <MetricItem 
+                            key={metric.label}
+                            value={metric.value}
+                            label={metric.label}
+                            icon={metric.icon}
+                        />
+                    ))}
                 </div>
             </div>
         </div>
     );
 };
 
-export default RoutineMetrics;
+export default SummaryMetrics;

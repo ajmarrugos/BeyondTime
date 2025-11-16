@@ -172,6 +172,66 @@
           "name": "Telegram Credentials"
         }
       }
+    },
+    {
+      "parameters": {
+        "path": "request-admin-edit-access",
+        "options": {}
+      },
+      "name": "Request Admin Edit Access",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        440,
+        720
+      ],
+      "webhookId": "b2c3d4e5-f6a7-8901-2345-67890abcdef1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.role}}",
+              "operation": "equal",
+              "value2": "Admin"
+            }
+          ]
+        }
+      },
+      "name": "Is user Admin?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        680,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "options": {}
+      },
+      "name": "Respond: OK (Admin Edit)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        920,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 403,
+        "options": {}
+      },
+      "name": "Respond: Forbidden (Admin Edit)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        920,
+        820
+      ]
     }
   ],
   "connections": {
@@ -244,6 +304,35 @@
             "node": "Send Welcome & Chat ID",
             "type": "main",
             "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Admin Edit Access": {
+      "main": [
+        [
+          {
+            "node": "Is user Admin?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is user Admin?": {
+      "main": [
+        [
+          {
+            "node": "Respond: OK (Admin Edit)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: Forbidden (Admin Edit)",
+            "type": "main",
+            "index": 1
           }
         ]
       ]

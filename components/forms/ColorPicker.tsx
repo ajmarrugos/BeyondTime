@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 
 interface ColorPickerProps {
@@ -16,7 +14,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ colors, selectedColor, onSele
                     key={color}
                     onClick={() => onSelectColor(color)}
                     aria-label={`Select color ${color}`}
-                    className={`w-10 h-10 rounded-full transition-all duration-200 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-transparent focus:ring-white/70`}
+                    className={`w-9 h-9 rounded-full transition-all duration-200 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-transparent focus:ring-white/70`}
                     style={{ backgroundColor: color }}
                 >
                     {selectedColor === color && (

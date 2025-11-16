@@ -1,15 +1,17 @@
 
 
 
+
 import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface StepperProps {
     steps: string[];
     currentStep: number;
+    onStepClick?: (step: number) => void;
 }
 
-const Stepper: React.FC<StepperProps> = ({ steps, currentStep }) => {
+const Stepper: React.FC<StepperProps> = ({ steps, currentStep, onStepClick }) => {
     const { themeConfig } = useTheme();
     return (
         <div className="px-6 pt-4 pb-2">
@@ -18,10 +20,21 @@ const Stepper: React.FC<StepperProps> = ({ steps, currentStep }) => {
                     const stepNumber = index + 1;
                     const isActive = stepNumber === currentStep;
                     const isCompleted = stepNumber < currentStep;
+                    const isClickable = !!onStepClick;
+
+                    const handleStepClick = isClickable ? () => onStepClick(stepNumber) : undefined;
 
                     return (
                         <React.Fragment key={step}>
-                            <div className="flex flex-col items-center">
+                            <button
+                                type="button"
+                                onClick={handleStepClick}
+                                disabled={!isClickable}
+                                aria-label={`Go to step ${stepNumber}: ${step}`}
+                                className={`flex flex-col items-center p-2 rounded-lg transition-opacity duration-200 focus:outline-none focus:ring-2 focus:ring-accent/50 ${
+                                    isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-default'
+                                }`}
+                            >
                                 <div
                                     className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors duration-300 ${
                                         isActive ? `bg-accent text-white ring-4 ring-accent/30` :
@@ -42,7 +55,7 @@ const Stepper: React.FC<StepperProps> = ({ steps, currentStep }) => {
                                 }`}>
                                     {step}
                                 </p>
-                            </div>
+                            </button>
                             {index < steps.length - 1 && (
                                 <div className={`flex-1 h-0.5 transition-colors duration-300 ${isCompleted ? 'bg-accent' : 'bg-black/20'}`} />
                             )}

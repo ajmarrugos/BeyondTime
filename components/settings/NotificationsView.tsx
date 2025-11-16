@@ -1,8 +1,8 @@
 import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotificationContext } from '../../contexts/NotificationContext';
-import SectionHeader from '../ui/SectionHeader';
 import ToggleSwitch from '../forms/ToggleSwitch';
+import ExpandableSection from '../ui/ExpandableSection';
 
 const NotificationsView: React.FC = () => {
     const { themeConfig } = useTheme();
@@ -26,21 +26,19 @@ const NotificationsView: React.FC = () => {
     };
 
     return (
-        <div className="overflow-y-auto h-full space-y-6">
-            <SectionHeader title="Notification Settings" description="Manage how you receive alerts." />
-
-            <div className="p-4 rounded-xl bg-black/20">
-                <ToggleSwitch
+        <div className="overflow-y-auto h-full space-y-4">
+            <ExpandableSection title="Global Toggle" defaultOpen={true}>
+                 <p className={`text-sm mb-3 ${themeConfig.subtextColor}`}>Enable or disable all app notifications.</p>
+                 <ToggleSwitch
                     label="Enable All Notifications"
                     enabled={notificationsEnabled}
                     setEnabled={setNotificationsEnabled}
                 />
-            </div>
-
-            <SectionHeader title="Browser Permissions" description="Control this app's ability to send notifications." />
-
-            <div className="p-4 rounded-xl bg-black/20 space-y-3">
-                <p className={`${themeConfig.subtextColor} text-sm`}>
+            </ExpandableSection>
+            
+            <ExpandableSection title="Browser Permissions" defaultOpen={true}>
+                <p className={`text-sm mb-3 ${themeConfig.subtextColor}`}>Control this app's ability to send notifications.</p>
+                 <p className={`${themeConfig.subtextColor} text-sm mb-3`}>
                     {getPermissionStatusText()}
                 </p>
                 {(permissionStatus === 'default' || permissionStatus === 'denied') && (
@@ -52,7 +50,7 @@ const NotificationsView: React.FC = () => {
                         {permissionStatus === 'denied' ? 'Permissions Denied' : 'Request Permissions'}
                     </button>
                 )}
-            </div>
+            </ExpandableSection>
         </div>
     );
 };

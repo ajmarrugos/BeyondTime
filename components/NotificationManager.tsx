@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+// FIX: Import React to make React.FC available.
+import React, { useEffect, useRef } from 'react';
 import { useNotificationContext } from '../contexts/NotificationContext';
-import { useRoutineContext } from '../contexts/RoutineContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { Routine } from '../types';
 

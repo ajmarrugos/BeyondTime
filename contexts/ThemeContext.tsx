@@ -5,6 +5,7 @@ import usePersistentState from '../hooks/usePersistentState';
 
 // --- New Types for Clock Customization ---
 export type ClockLayout = 'luxury' | 'minimalist' | 'digital' | 'pro';
+export type StartOfWeek = 'sunday' | 'monday';
 
 export interface ClockEffects {
     sweepingSecondHand: boolean;
@@ -23,6 +24,12 @@ interface ThemeContextType {
     clockEffects: ClockEffects;
     handleClockLayoutChange: (layout: ClockLayout) => void;
     handleClockEffectChange: (effect: keyof ClockEffects, value: boolean) => void;
+    // New week start setting
+    startOfWeek: StartOfWeek;
+    handleStartOfWeekChange: (day: StartOfWeek) => void;
+    // New animation speed setting
+    animationSpeed: number;
+    handleAnimationSpeedChange: (speed: number) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -30,6 +37,8 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [currentTheme, setCurrentTheme] = usePersistentState<ThemeName>('theme', 'dark');
     const [accentColor, setAccentColor] = usePersistentState<string>('accentColor', '#6366f1');
+    const [startOfWeek, setStartOfWeek] = usePersistentState<StartOfWeek>('startOfWeek', 'sunday');
+    const [animationSpeed, setAnimationSpeed] = usePersistentState<number>('animationSpeed', 1);
 
     // --- State for Clock Settings ---
     const [clockLayout, setClockLayout] = usePersistentState<ClockLayout>('clockLayout', 'luxury');
@@ -59,6 +68,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setClockEffects(prev => ({ ...prev, [effect]: value }));
     };
 
+    const handleStartOfWeekChange = (day: StartOfWeek) => {
+        setStartOfWeek(day);
+    };
+
+    const handleAnimationSpeedChange = (speed: number) => {
+        setAnimationSpeed(speed);
+    };
+
     const themeConfig = themes[currentTheme];
     
     const value = useMemo(() => ({
@@ -71,7 +88,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         clockEffects,
         handleClockLayoutChange,
         handleClockEffectChange,
-    }), [themeConfig, currentTheme, accentColor, clockLayout, clockEffects]);
+        startOfWeek,
+        handleStartOfWeekChange,
+        animationSpeed,
+        handleAnimationSpeedChange,
+    }), [themeConfig, currentTheme, accentColor, clockLayout, clockEffects, startOfWeek, animationSpeed]);
 
     return (
         <ThemeContext.Provider value={value}>

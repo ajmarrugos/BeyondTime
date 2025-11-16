@@ -11,8 +11,9 @@ import MemberManagementView from './settings/MemberManagementView';
 import IntegrationsDataView from './settings/IntegrationsDataView';
 import PermissionsView from './settings/PermissionsView';
 import NotificationsView from './settings/NotificationsView';
+import AboutView from './settings/AboutView';
 
-type MenuView = 'main' | 'settings' | 'members' | 'integrations' | 'permissions' | 'notifications';
+type MenuView = 'main' | 'settings' | 'members' | 'integrations' | 'permissions' | 'notifications' | 'about';
 
 interface SettingsPanelProps {
     isOpen: boolean;
@@ -25,7 +26,8 @@ const viewTitles: Record<MenuView, string> = {
     members: 'Manage Members',
     integrations: 'Integrations & Data',
     permissions: 'Roles & Permissions',
-    notifications: 'Notifications'
+    notifications: 'Notifications',
+    about: 'About',
 };
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
@@ -60,6 +62,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
                 return <div className={`${commonStyle} ${activeStyle}`}><PermissionsView /></div>;
             case 'notifications':
                 return <div className={`${commonStyle} ${activeStyle}`}><NotificationsView /></div>;
+            case 'about':
+                return <div className={`${commonStyle} ${activeStyle}`}><AboutView /></div>;
             default:
                 return null;
         }
@@ -98,6 +102,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
                     {renderView('integrations')}
                     {renderView('permissions')}
                     {renderView('notifications')}
+                    {renderView('about')}
                 </div>
             </aside>
         </>

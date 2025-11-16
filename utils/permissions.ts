@@ -64,3 +64,21 @@ export const canManageRoutineSelector = (
             return false;
     }
 };
+
+export const getAssignableMembersSelector = (
+    members: Member[],
+    currentUser: Member,
+    permissionSet: PermissionSet
+): Member[] => {
+    const scope = permissionSet.viewRoutines; // Logic is based on what you can SEE to assign
+    switch (scope) {
+        case 'All':
+            return members;
+        case 'Team':
+            return members.filter(m => m.teamId === currentUser.teamId);
+        case 'Self':
+            return members.filter(m => m.id === currentUser.id);
+        default:
+            return [];
+    }
+};

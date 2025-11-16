@@ -1,5 +1,4 @@
 
-
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useTheme, ClockLayout, ClockEffects } from '../contexts/ThemeContext';
 import { Routine } from '../types';
@@ -236,24 +235,26 @@ const Clock: React.FC<ClockProps> = ({
     const timerArcPath = useMemo(() => {
         if (!isTimerActive && !isSettingTimer) return null;
 
-        const startAngle = (time.getSeconds() / 60) * 360;
-        
+        const startAngle = 0; // Always start at 12 o'clock
+
         if (isSettingTimer) {
-             let angleDiff = timerDraftAngle - startAngle;
-             if (angleDiff < 0) angleDiff += 360;
-             const effectiveEndAngle = startAngle + angleDiff;
-             return describeArc(0, 0, 45, startAngle, effectiveEndAngle);
+             // Don't draw if angle is effectively 0
+             if (timerDraftAngle <= 0.01) return null;
+             return describeArc(0, 0, 45, startAngle, timerDraftAngle);
         }
         
         if (isTimerActive) {
-            const currentSecondAngle = (time.getSeconds() + time.getMilliseconds() / 1000) * 6;
-            const durationAngle = (timeRemaining / 60) * 360;
-            const timerEndAngle = currentSecondAngle + durationAngle;
-            return describeArc(0, 0, 45, currentSecondAngle, timerEndAngle);
+            // A full circle represents 60 minutes (3600 seconds)
+            // The total arc was set based on a 60-min max. The countdown should respect that.
+            const durationAngle = (timeRemaining / 3600) * 360;
+            
+            // Don't draw if timer is basically finished
+            if (durationAngle <= 0.01) return null;
+            return describeArc(0, 0, 45, startAngle, durationAngle);
         }
 
         return null;
-    }, [isTimerActive, isSettingTimer, time, timeRemaining, timerDraftAngle]);
+    }, [isTimerActive, isSettingTimer, timeRemaining, timerDraftAngle]);
 
     const timerHandlePosition = useMemo((): React.CSSProperties | null => {
         if (!isSettingTimer) return null;

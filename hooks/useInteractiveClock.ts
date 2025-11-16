@@ -12,7 +12,10 @@ type InteractionState = 'idle' | 'pressing' | 'settingTime' | 'settingTimer';
  * 2. Setting a timer via a long-press and drag.
  * 3. Smoothly animating the clock back to the real time after user interaction.
  */
-export const useClockInteraction = (onTimerSet: (durationInSeconds: number) => void) => {
+export const useClockInteraction = (
+    onTimerSet: (durationInSeconds: number) => void,
+    onClockClick: () => void,
+) => {
     const [time, setTime] = useState(new Date());
     const [interactionState, setInteractionState] = useState<InteractionState>('idle');
     const [timerDraftAngle, setTimerDraftAngle] = useState(0);
@@ -129,60 +132,62 @@ export const useClockInteraction = (onTimerSet: (durationInSeconds: number) => v
         }, LONG_PRESS_DURATION_MS);
 
     }, [calculateAngleFromCoords]);
+    
+    const handleMove = useCallback((e: MouseEvent | TouchEvent) => {
+        if (interactionState === 'idle') return;
 
-    useEffect(() => {
-        const handleMove = (e: MouseEvent | TouchEvent) => {
-            if (interactionState === 'idle') return;
-
-            // If user moves before long press timeout, switch to setting time
-            if (interactionState === 'pressing') {
-                if (longPressTimeoutRef.current) {
-                    clearTimeout(longPressTimeoutRef.current);
-                    longPressTimeoutRef.current = null;
-                }
-                setInteractionState('settingTime');
-            }
-
-            if (e.type === 'touchmove') e.preventDefault();
-            const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-            const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-
-            if (interactionState === 'settingTime') {
-                setTimeFromCoordsRef.current(clientX, clientY);
-            } else if (interactionState === 'settingTimer') {
-                setTimerDraftAngle(calculateAngleFromCoords(clientX, clientY));
-            }
-        };
-
-        const handleEnd = () => {
-            if (interactionState === 'idle') return;
-
+        // If user moves before long press timeout, switch to setting time
+        if (interactionState === 'pressing') {
             if (longPressTimeoutRef.current) {
                 clearTimeout(longPressTimeoutRef.current);
                 longPressTimeoutRef.current = null;
             }
+            setInteractionState('settingTime');
+        }
 
-            if (interactionState === 'settingTimer') {
-                const startAngle = (time.getSeconds() / 60) * 360;
-                let angleDiff = timerDraftAngle - startAngle;
-                if (angleDiff < 0) angleDiff += 360;
-                
-                const durationSeconds = Math.round((angleDiff / 360) * 60);
-                if (durationSeconds > 0) {
-                    onTimerSet(durationSeconds);
-                }
+        if (e.type === 'touchmove') e.preventDefault();
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+        if (interactionState === 'settingTime') {
+            setTimeFromCoordsRef.current(clientX, clientY);
+        } else if (interactionState === 'settingTimer') {
+            setTimerDraftAngle(calculateAngleFromCoords(clientX, clientY));
+        }
+    }, [interactionState, calculateAngleFromCoords]);
+    
+    const handleEnd = useCallback(() => {
+        if (interactionState === 'idle') return;
+
+        if (longPressTimeoutRef.current) {
+            clearTimeout(longPressTimeoutRef.current);
+            longPressTimeoutRef.current = null;
+        }
+
+        if (interactionState === 'pressing') {
+            onClockClick();
+        } else if (interactionState === 'settingTimer') {
+            // A full 360 degrees is 60 minutes.
+            const durationInMinutes = (timerDraftAngle / 360) * 60;
+            // Round to the nearest minute for clean timer setting
+            const roundedMinutes = Math.round(durationInMinutes);
+            const durationSeconds = roundedMinutes * 60;
+
+            if (durationSeconds > 0) {
+                onTimerSet(durationSeconds);
             }
+        } else if (interactionState === 'settingTime') {
+             setTime(currentTime => {
+                lastUserSetTimeRef.current = currentTime.getTime();
+                return currentTime;
+            });
+        }
 
-            if (interactionState === 'settingTime') {
-                 setTime(currentTime => {
-                    lastUserSetTimeRef.current = currentTime.getTime();
-                    return currentTime;
-                });
-            }
+        setInteractionState('idle');
+    }, [interactionState, onClockClick, timerDraftAngle, onTimerSet]);
 
-            setInteractionState('idle');
-        };
 
+    useEffect(() => {
         window.addEventListener('mousemove', handleMove);
         window.addEventListener('touchmove', handleMove, { passive: false });
         window.addEventListener('mouseup', handleEnd);
@@ -194,7 +199,7 @@ export const useClockInteraction = (onTimerSet: (durationInSeconds: number) => v
             window.removeEventListener('mouseup', handleEnd);
             window.removeEventListener('touchend', handleEnd);
         };
-    }, [interactionState, time, onTimerSet, timerDraftAngle, calculateAngleFromCoords]);
+    }, [handleMove, handleEnd]);
 
     return {
         time,

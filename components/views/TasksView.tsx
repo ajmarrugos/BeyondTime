@@ -10,21 +10,19 @@ import { useAppData } from '../../contexts/AppDataContext';
 import { useModal } from '../../contexts/ModalContext';
 import { useDragState } from '../../contexts/DragStateContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useCurrentTime } from '../../hooks/useCurrentTime';
 import SummaryMetrics from '../ui/RoutineMetrics';
 import { useVirtualization } from '../../hooks/useVirtualization';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../contexts/ToastContext';
 import ViewSwitcher from '../ui/ViewSwitcher';
 
-interface RoutinesViewProps {
+interface TasksViewProps {
     routines: Routine[];
     completedTasks: Record<number, number[]>;
     onToggleTask: (routineId: number, taskId: number) => void;
 }
 
 const ROW_PADDING_BOTTOM = 12;
-
 const BASE_COLLAPSED_HEIGHT = 184;
 const BASE_EXPANDED_HEIGHT = 230;
 const HEIGHT_PER_TASK = 44;
@@ -32,7 +30,7 @@ const HEIGHT_PER_DESC_LINE = 20;
 const CHARS_PER_DESC_LINE = 45;
 const BUDGET_SECTION_HEIGHT = 70;
 
-const RoutinesView: React.FC<RoutinesViewProps> = ({ 
+const TasksView: React.FC<TasksViewProps> = ({ 
     routines, 
     completedTasks,
     onToggleTask
@@ -43,10 +41,9 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
     const { canDeleteRoutine, canEditRoutine } = usePermissions();
     const { addToast } = useToast();
     const { themeConfig } = useTheme();
-    const currentTime = useCurrentTime();
     
     const [searchQuery, setSearchQuery] = useState('');
-    const [filter, setFilter] = useState<'All' | 'Events' | 'Routines'>('All');
+    const [filter, setFilter] = useState<'All' | 'Tasks' | 'Payments'>('All');
     const [activeId, setActiveId] = useState<number | null>(null);
     const [expandedRoutineId, setExpandedRoutineId] = useState<number | null>(null);
     const [deletingRoutineId, setDeletingRoutineId] = useState<number | null>(null);
@@ -57,120 +54,94 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
 
     const summaryMetrics = useMemo(() => {
-        const now = currentTime;
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-        const routineItems = routines.filter(r => r.tags.includes('Routine'));
-        const eventItems = routines.filter(r => r.tags.includes('Event'));
+        const taskItems = routines.filter(r => r.tags.includes('Task'));
+        const paymentItems = routines.filter(r => r.tags.includes('Payment'));
         
-        // --- Routine Helpers ---
-        const isRoutineLive = (routine: Routine) => {
-            if (!routine.autoLive) return false;
-            const [startHour, startMinute] = routine.startTime.split(':').map(Number);
-            const startTime = new Date(now); startTime.setHours(startHour, startMinute, 0, 0);
-            const [endHour, endMinute] = routine.endTime.split(':').map(Number);
-            const endTime = new Date(now); endTime.setHours(endHour, endMinute, 0, 0);
-            if (endTime.getTime() <= startTime.getTime()) return now.getTime() >= startTime.getTime() || now.getTime() < endTime.getTime();
-            return now.getTime() >= startTime.getTime() && now.getTime() < endTime.getTime();
+        const isCompleted = (item: Routine) => {
+            const completedIds = new Set(completedTasks[item.id] || []);
+            return completedIds.has(0);
         };
-        const isRoutineCompleted = (routine: Routine) => {
-            if (routine.tasks.length === 0) return false;
-            const completedIds = completedTasks[routine.id] || [];
-            return routine.tasks.every(task => completedIds.includes(task.id));
+        
+        const getDueDate = (item: Routine): Date | null => {
+            if (!item.annualDates?.[0]) return null;
+            return new Date(item.annualDates[0] + 'T00:00:00');
         };
-        const isItemActiveOnDate = (item: Routine, date: Date) => {
-            const dayOfWeek = date.getDay(), dayOfMonth = date.getDate(), year = date.getFullYear();
-            const isoDate = `${year}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            switch (item.repetition) {
-                case 'Daily': return true;
-                case 'Weekly': return item.weekdays?.includes(dayOfWeek) ?? false;
-                case 'Monthly': return item.monthDays?.includes(dayOfMonth) ?? false;
-                case 'Annually': return item.annualDates?.includes(isoDate) ?? false;
-                default: return false;
+        
+        const getItemAmount = (item: Routine): number => {
+            return item.budget || 0;
+        };
+        
+        const formatCurrency = (value: number) => {
+            if (value >= 1000) {
+                return `$${(value / 1000).toFixed(1)}k`;
             }
-        };
-        const calculateTasksForDateRange = (days: number): number => {
-            let total = 0;
-            for (let i = 0; i < days; i++) {
-                const dateToCheck = new Date(); dateToCheck.setDate(today.getDate() + i);
-                routineItems.forEach(routine => { if (isItemActiveOnDate(routine, dateToCheck)) total += routine.tasks.length; });
-            }
-            return total;
-        };
-
-        // --- Event Helpers ---
-        const countEventsInNextDays = (days: number) => {
-             const limitDate = new Date(today);
-             limitDate.setDate(today.getDate() + days + 1);
-             return eventItems.filter(e => {
-                 if (!e.annualDates?.[0]) return false;
-                 const eventDate = new Date(e.annualDates[0] + 'T00:00:00');
-                 return eventDate >= today && eventDate < limitDate;
-             }).length;
-        };
+            return `$${value.toFixed(0)}`;
+        }
 
         switch(filter) {
-            case 'Routines': {
-                const liveNow = routineItems.filter(r => isRoutineLive(r) && !isRoutineCompleted(r)).length;
-                const completed = routineItems.filter(isRoutineCompleted).length;
-                const totalTasksToday = routineItems.filter(r => isItemActiveOnDate(r, new Date())).reduce((acc, r) => acc + r.tasks.length, 0);
-
+            case 'Tasks': {
+                const pending = taskItems.filter(t => !isCompleted(t)).length;
                 return {
                     mainMetrics: [
-                        { value: routineItems.length, label: 'Routines' },
-                        { value: liveNow, label: 'Live Now' },
-                        { value: completed, label: 'Completed' },
+                        { value: taskItems.length, label: 'Total Tasks' },
+                        { value: pending, label: 'Pending' },
+                        { value: taskItems.length - pending, label: 'Completed' },
                     ],
-                    expandedMetrics: [
-                        { value: totalTasksToday, label: 'Tasks Today', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> },
-                        { value: calculateTasksForDateRange(7), label: 'Tasks This Week', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
-                        { value: calculateTasksForDateRange(30), label: 'Tasks this Month', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> }
-                    ]
+                    expandedMetrics: []
                 };
             }
-            case 'Events': {
-                const upcomingEvents = eventItems.filter(e => e.annualDates && new Date(e.annualDates[0] + 'T00:00:00') >= today).length;
-                const pastEvents = eventItems.length - upcomingEvents;
-                const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-                const eventsTomorrow = eventItems.filter(e => e.annualDates?.[0] === tomorrow.toISOString().split('T')[0]).length;
+            case 'Payments': {
+                let upcomingAmount = 0;
+                let overdueAmount = 0;
+                paymentItems.forEach(p => {
+                    const dueDate = getDueDate(p);
+                    if (!dueDate || isCompleted(p)) return;
+                    
+                    const amount = getItemAmount(p);
+                    if (dueDate < today) {
+                        overdueAmount += amount;
+                    } else {
+                        upcomingAmount += amount;
+                    }
+                });
                 return {
                     mainMetrics: [
-                        { value: eventItems.length, label: 'Events' },
-                        { value: upcomingEvents, label: 'Upcoming' },
-                        { value: pastEvents, label: 'Past' },
+                        { value: paymentItems.length, label: 'Payments' },
+                        { value: upcomingAmount, label: 'Upcoming' },
+                        { value: overdueAmount, label: 'Overdue' },
                     ],
                     expandedMetrics: [
-                        { value: eventsTomorrow, label: 'Tomorrow', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg> },
-                        { value: countEventsInNextDays(7), label: 'Next 7 Days', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
-                        { value: countEventsInNextDays(30), label: 'Next 30 Days', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> }
+                        { value: upcomingAmount, label: `Upcoming (${formatCurrency(upcomingAmount)})` },
+                        { value: overdueAmount, label: `Overdue (${formatCurrency(overdueAmount)})` },
+                        { value: upcomingAmount + overdueAmount, label: `Total Due (${formatCurrency(upcomingAmount + overdueAmount)})` }
                     ]
                 };
             }
             case 'All':
             default: {
-                const liveNow = routineItems.filter(r => isRoutineLive(r) && !isRoutineCompleted(r)).length;
-                const upcomingEvents = eventItems.filter(e => e.annualDates && new Date(e.annualDates[0] + 'T00:00:00') >= today).length;
-                const totalTasksToday = routineItems.filter(r => isItemActiveOnDate(r, new Date())).reduce((acc, r) => acc + r.tasks.length, 0);
-
-                return {
+                const pendingTasks = taskItems.filter(t => !isCompleted(t)).length;
+                const upcomingPayments = paymentItems.filter(p => {
+                    const dueDate = getDueDate(p);
+                    return dueDate && dueDate >= today && !isCompleted(p);
+                }).length;
+                 return {
                      mainMetrics: [
                         { value: routines.length, label: 'Total Items' },
-                        { value: liveNow, label: 'Live Routines' },
-                        { value: upcomingEvents, label: 'Upcoming Events' }
+                        { value: pendingTasks, label: 'Pending Tasks' },
+                        { value: upcomingPayments, label: 'Upcoming Payments' }
                     ],
-                    expandedMetrics: [
-                        { value: totalTasksToday, label: 'Tasks Today', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> },
-                        { value: routineItems.length, label: 'Total Routines', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg> },
-                        { value: eventItems.length, label: 'Total Events', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> }
-                    ]
+                    expandedMetrics: []
                 };
             }
         }
-    }, [routines, completedTasks, currentTime, filter]);
+    }, [routines, completedTasks, filter]);
 
     const filteredByTag = useMemo(() => {
         if (filter === 'All') return routines;
-        return routines.filter(r => r.tags.includes(filter.slice(0, -1))); // Routines -> Routine
+        return routines.filter(r => r.tags.includes(filter.slice(0, -1))); // Tasks -> Task
     }, [routines, filter]);
 
     const filteredRoutines = useMemo(() => {
@@ -199,7 +170,7 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
                 height += HEIGHT_PER_DESC_LINE;
             }
             height += (routine.tasks.length > 0 ? routine.tasks.length : 1) * HEIGHT_PER_TASK;
-            if (routine.tasks.reduce((sum, task) => sum + (task.budget || 0), 0) > 0) {
+            if (routine.budget) {
                 height += BUDGET_SECTION_HEIGHT;
             }
             return height;
@@ -323,14 +294,14 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
 
     const filterOptions = useMemo(() => [
         { label: 'All', value: 'All' as const },
-        { label: 'Events', value: 'Events' as const },
-        { label: 'Routines', value: 'Routines' as const }
+        { label: 'Tasks', value: 'Tasks' as const },
+        { label: 'Payments', value: 'Payments' as const }
     ], []);
 
     return (
         <div className="relative w-full h-full flex flex-col z-10 p-6 pt-0">
             <ViewHeader 
-                title="Routines & Events"
+                title="Tasks & Payments"
                 actionButton={{ label: "Add Item", onClick: openRoutineModal }}
             />
             
@@ -376,9 +347,9 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
                 </div>
             ) : (
                  <div className="flex-1 flex flex-col items-center justify-center text-center">
-                    <svg className="h-24 w-24 text-gray-400/50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
-                     <h2 className="text-2xl font-medium text-gray-200 mt-6">No Items Yet</h2>
-                     <p className="mt-2 max-w-sm text-gray-400">Click 'Add Item' to create your first routine or event.</p>
+                    <svg className="h-24 w-24 text-gray-400/50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                     <h2 className="text-2xl font-medium text-gray-200 mt-6">No Tasks or Payments</h2>
+                     <p className="mt-2 max-w-sm text-gray-400">Click 'Add Item' to create your first task or payment.</p>
                 </div>
             )}
 
@@ -422,4 +393,4 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
     );
 };
 
-export default RoutinesView;
+export default TasksView;

@@ -1,15 +1,15 @@
-import React, { useCallback, useRef, useEffect, memo, useState } from 'react';
+
+
+import React, { useCallback, useRef, useEffect, memo, useState, useMemo } from 'react';
 
 // Hooks
 import { useDevice } from './contexts/DeviceContext';
 import { useTheme } from './contexts/ThemeContext';
-import { useRoutineContext } from './contexts/RoutineContext';
 import { useAuth } from './contexts/AuthContext';
 import { usePermissions } from './hooks/usePermissions';
 import { useModal } from './contexts/ModalContext';
 import { useSettingsPanel } from './contexts/SettingsPanelContext';
 import { useDragState } from './contexts/DragStateContext';
-import { useToast } from './contexts/ToastContext';
 import usePersistentState from './hooks/usePersistentState';
 
 
@@ -19,7 +19,7 @@ import SettingsPanel from './components/SettingsPanel';
 import ViewIndicator from './components/ViewIndicator';
 import ClockView from './components/views/ClockView';
 import RoutinesView from './components/views/RoutinesView';
-import EventsView from './components/views/EventsView';
+import TasksView from './components/views/TasksView';
 import Logo from './components/Logo';
 import AddRoutineModal from './components/modals/AddRoutineModal';
 import LoginView from './components/views/LoginView';
@@ -37,36 +37,41 @@ import { SCROLL_THROTTLE_MS } from './config/constants';
 // Memoized Views for performance
 const MemoRoutinesView = memo(RoutinesView);
 const MemoClockView = memo(ClockView);
-const MemoEventsView = memo(EventsView);
+const MemoTasksView = memo(TasksView);
 
 
 // --- Main App Component ---
 
 const App: React.FC = () => {
   const { themeConfig } = useTheme();
-  const { addRoutine, updateRoutine, deleteRoutine } = useRoutineContext();
   const { currentUser } = useAuth();
-  const { getVisibleRoutines, canViewSettingsPanel, canDeleteRoutine, canEditRoutine } = usePermissions();
+  const { getVisibleRoutines, canViewSettingsPanel } = usePermissions();
   const {
     isRoutineModalMounted, isRoutineModalOpen, closeRoutineModal, handleRoutineModalExited,
-    editingRoutine, openRoutineModalForEdit,
-    isConfirmModalOpen, confirmModalProps, confirm, handleConfirm, handleCancelConfirm
+    isConfirmModalOpen, confirmModalProps, handleConfirm, handleCancelConfirm
   } = useModal();
   const { isSettingsOpen, openSettings, closeSettings } = useSettingsPanel();
   const { isDraggingRoutine } = useDragState();
-  const { addToast } = useToast();
  
   // View state and scroll handling
-  const [currentView, setCurrentView] = useState(1); // 0: Routines, 1: Clock, 2: Events
+  const [currentView, setCurrentView] = useState(1); // 0:Routines, 1:Clock, 2:Tasks
   const appRef = useRef<HTMLElement>(null);
   const lastScrollTime = useRef(0);
   
   const device = useDevice();
   const viewCount = 3;
   
-  // Deletion animation state
-  const [deletingRoutineId, setDeletingRoutineId] = useState<number | null>(null);
   const visibleRoutines = getVisibleRoutines();
+
+  // Split routines into two categories for the different views
+  const routinesAndEvents = useMemo(() => 
+      visibleRoutines.filter(r => r.tags.includes('Routine') || r.tags.includes('Event')), 
+      [visibleRoutines]
+  );
+  const tasksAndPayments = useMemo(() => 
+      visibleRoutines.filter(r => r.tags.includes('Task') || r.tags.includes('Payment')),
+      [visibleRoutines]
+  );
 
   // Clock glow effect state
   const [showClockGlow, setShowClockGlow] = useState(false);
@@ -94,38 +99,6 @@ const App: React.FC = () => {
         return newCompletedState;
     });
   }, [setCompletedTasks]);
-
-  const handleDeleteRoutine = useCallback((id: number) => {
-    const routineToDelete = visibleRoutines.find(r => r.id === id);
-    if (!routineToDelete) return;
-
-    if (canDeleteRoutine(routineToDelete)) {
-        confirm({
-            title: 'Delete Routine',
-            message: `Are you sure you want to delete the routine "${routineToDelete.name}"? This action cannot be undone.`,
-            onConfirm: () => setDeletingRoutineId(id),
-            confirmText: 'Delete',
-        });
-    } else {
-        addToast("You don't have permission to delete this routine.", 'error');
-    }
-  }, [visibleRoutines, canDeleteRoutine, confirm, addToast]);
-
-  const handleEditRoutine = useCallback((routineId: number) => {
-      const routineToEdit = visibleRoutines.find(r => r.id === routineId);
-      if (!routineToEdit) return;
-
-      if (canEditRoutine(routineToEdit)) {
-          openRoutineModalForEdit(routineToEdit);
-      } else {
-          addToast("You don't have permission to edit this routine.", 'error');
-      }
-  }, [visibleRoutines, canEditRoutine, openRoutineModalForEdit, addToast]);
-  
-  const handleRoutineDeleteAnimationEnd = (id: number) => {
-    deleteRoutine(id);
-    setDeletingRoutineId(null);
-  };
 
   const handleSetView = useCallback((viewIndex: number) => {
     setCurrentView(viewIndex);
@@ -220,7 +193,7 @@ const App: React.FC = () => {
           {/* Main Layout Container */}
           <div className="relative z-10 flex flex-col w-full h-full">
             {/* Header */}
-            <header className="flex-shrink-0 pt-6 px-6 md:pt-8 md:px-8 flex items-center justify-between">
+            <header className="flex-shrink-0 pt-4 px-6 md:pt-6 md:px-8 flex items-center justify-between">
                 <button onClick={handleLogoClick} aria-label="Go to Clock View">
                   <Logo className={`h-10 w-10 ${themeConfig.textColor} transition-transform hover:scale-110`} />
                 </button>
@@ -247,11 +220,7 @@ const App: React.FC = () => {
             >
                 <section className="w-full h-full flex-shrink-0">
                   <MemoRoutinesView 
-                    routines={visibleRoutines}
-                    deletingRoutineId={deletingRoutineId}
-                    onDeleteRoutine={handleDeleteRoutine}
-                    onEditRoutine={handleEditRoutine}
-                    onDeleteAnimationEnd={handleRoutineDeleteAnimationEnd}
+                    routines={routinesAndEvents}
                     completedTasks={completedTasks}
                     onToggleTask={handleToggleTask}
                   />
@@ -259,25 +228,29 @@ const App: React.FC = () => {
                 <section className="w-full h-full flex-shrink-0">
                     <MemoClockView 
                         showGlow={showClockGlow} 
-                        routines={visibleRoutines}
+                        routines={routinesAndEvents}
                         completedTasks={completedTasks}
                         onNavigateToRoutines={() => handleSetView(0)}
                     />
                 </section>
                 <section className="w-full h-full flex-shrink-0">
-                  <MemoEventsView />
+                  <MemoTasksView
+                    routines={tasksAndPayments}
+                    completedTasks={completedTasks}
+                    onToggleTask={handleToggleTask}
+                  />
                 </section>
             </SwipeableLayout>
             
-            {/* Invisible Footer */}
-            <footer className="flex-shrink-0 h-12" />
+            {/* Footer with View Indicator */}
+            <footer className="flex-shrink-0 h-12 flex items-center justify-center">
+              <ViewIndicator 
+                viewCount={viewCount} 
+                currentView={currentView} 
+                onIndicatorClick={handleSetView} 
+              />
+            </footer>
           </div>
-          
-          <ViewIndicator 
-            viewCount={viewCount} 
-            currentView={currentView} 
-            onIndicatorClick={handleSetView} 
-          />
           
           <SettingsPanel
             isOpen={isSettingsOpen}
@@ -293,9 +266,6 @@ const App: React.FC = () => {
                 isOpen={isRoutineModalOpen}
                 onClose={closeRoutineModal}
                 onExited={handleRoutineModalExited}
-                onAddRoutine={addRoutine}
-                onUpdateRoutine={updateRoutine}
-                routineToEdit={editingRoutine}
             />
           )}
 

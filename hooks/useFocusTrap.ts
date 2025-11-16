@@ -29,17 +29,23 @@ export const useFocusTrap = (isOpen: boolean) => {
                 if (e.key !== 'Tab' || !containerRef.current) return;
 
                 const focusable = Array.from(containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS));
+                // FIX: Add a guard to ensure focusable elements exist before trying to access them.
+                if (focusable.length === 0) {
+                    return;
+                }
                 const firstElement = focusable[0];
                 const lastElement = focusable[focusable.length - 1];
 
                 if (e.shiftKey) { // Shift + Tab
                     if (document.activeElement === firstElement) {
-                        lastElement.focus();
+                        // FIX: Cast to HTMLElement to ensure focus method is available.
+                        (lastElement as HTMLElement).focus();
                         e.preventDefault();
                     }
                 } else { // Tab
                     if (document.activeElement === lastElement) {
-                        firstElement.focus();
+                        // FIX: Cast to HTMLElement to ensure focus method is available.
+                        (firstElement as HTMLElement).focus();
                         e.preventDefault();
                     }
                 }

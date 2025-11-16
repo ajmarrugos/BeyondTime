@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -16,7 +14,7 @@ const ViewIndicator: React.FC<ViewIndicatorProps> = ({
 }) => {
     const { themeConfig } = useTheme();
     return (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-10 flex space-x-2 p-2 rounded-full"
+        <div className="flex space-x-2 p-2 rounded-full"
             aria-label="Page indicator"
             role="tablist"
         >

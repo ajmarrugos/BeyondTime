@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../hooks/usePermissions';
 
 interface MainMenuViewProps {
-    setMenuView: (view: 'main' | 'settings' | 'members' | 'integrations' | 'permissions' | 'notifications') => void;
+    setMenuView: (view: 'main' | 'settings' | 'members' | 'integrations' | 'permissions' | 'notifications' | 'about') => void;
 }
 
 const MenuItem: React.FC<{ onClick: () => void, children: React.ReactNode, icon: React.ReactNode }> = ({ onClick, children, icon }) => {
@@ -63,6 +63,12 @@ const MainMenuView: React.FC<MainMenuViewProps> = ({ setMenuView }) => {
                         Integrations & Data
                     </MenuItem>
                 )}
+                <MenuItem
+                    onClick={() => setMenuView('about')}
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                >
+                    About BeyondTime
+                </MenuItem>
             </ul>
             <div className="flex-shrink-0">
                 <button onClick={logout} role="menuitem" className={`w-full flex items-center space-x-3 p-4 rounded-xl text-left transition-colors duration-200 hover:bg-red-500/10 text-red-400`}>

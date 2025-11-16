@@ -11,11 +11,8 @@ import { SettingsPanelProvider } from './contexts/SettingsPanelContext';
 import { DragStateProvider } from './contexts/DragStateContext';
 import { ToastProvider } from './contexts/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
-import { MemberProvider } from './contexts/MemberContext';
-import { RoutineProvider } from './contexts/RoutineContext';
-import { TeamProvider } from './contexts/TeamContext';
-import { EventProvider } from './contexts/EventContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { AppDataProvider } from './contexts/AppDataContext';
 
 
 const rootElement = document.getElementById('root');
@@ -29,31 +26,25 @@ root.render(
     <ErrorBoundary>
       <DeviceProvider>
         <ThemeProvider>
-          <TeamProvider>
-            <EventProvider>
-              <MemberProvider>
-                <RoutineProvider>
-                  <AuthProvider>
-                    <ToastProvider>
-                      <NotificationProvider>
-                        <SettingsPanelProvider>
-                          <ModalProvider>
-                            <DragStateProvider>
-                              <PermissionsProvider>
-                                <DeviceMotionProvider>
-                                  <App />
-                                </DeviceMotionProvider>
-                              </PermissionsProvider>
-                            </DragStateProvider>
-                          </ModalProvider>
-                        </SettingsPanelProvider>
-                      </NotificationProvider>
-                    </ToastProvider>
-                  </AuthProvider>
-                </RoutineProvider>
-              </MemberProvider>
-            </EventProvider>
-          </TeamProvider>
+          <ToastProvider>
+            <AppDataProvider>
+              <AuthProvider>
+                <NotificationProvider>
+                  <SettingsPanelProvider>
+                    <ModalProvider>
+                      <DragStateProvider>
+                        <PermissionsProvider>
+                          <DeviceMotionProvider>
+                            <App />
+                          </DeviceMotionProvider>
+                        </PermissionsProvider>
+                      </DragStateProvider>
+                    </ModalProvider>
+                  </SettingsPanelProvider>
+                </NotificationProvider>
+              </AuthProvider>
+            </AppDataProvider>
+          </ToastProvider>
         </ThemeProvider>
       </DeviceProvider>
     </ErrorBoundary>

@@ -3,7 +3,7 @@ import { PermissionsModel } from '../types';
 export const initialPermissions: PermissionsModel = {
   Admin: {
     manageMembers: 'All',
-    manageRoutines: 'All',
+    manageRoutines: 'Self',
     viewRoutines: 'All',
     viewIntegrations: 'All',
     managePermissions: 'All',

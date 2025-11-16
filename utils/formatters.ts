@@ -1,6 +1,15 @@
+
 import { Routine } from '../types';
 
 export const formatRepetition = (routine: Routine): string => {
+    const isTaskOrPayment = routine.tags.includes('Task') || routine.tags.includes('Payment');
+
+    if (isTaskOrPayment) {
+        if (!routine.annualDates || routine.annualDates.length === 0) return 'No due date';
+        const dueDate = new Date(routine.annualDates[0] + 'T00:00:00');
+        return `Due: ${dueDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    }
+
     switch (routine.repetition) {
         case 'Daily':
             return 'Every day';
