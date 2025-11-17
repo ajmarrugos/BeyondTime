@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Routine } from '../../types';
@@ -323,7 +324,13 @@ const TasksView: React.FC<TasksViewProps> = ({
                                      <div key={routine.id} style={{ ...style, paddingBottom: `${ROW_PADDING_BOTTOM}px`, boxSizing: 'border-box' }}>
                                         <RoutineCard 
                                             routine={routine}
-                                            ref={el => el ? routineCardRefs.current.set(routine.id, el) : routineCardRefs.current.delete(routine.id)}
+                                            ref={el => {
+                                                if (el) {
+                                                    routineCardRefs.current.set(routine.id, el);
+                                                } else {
+                                                    routineCardRefs.current.delete(routine.id);
+                                                }
+                                            }}
                                             isPlaceholder={activeId === routine.id}
                                             isDeleting={deletingRoutineId === routine.id}
                                             actions={cardActions}
@@ -365,7 +372,7 @@ const TasksView: React.FC<TasksViewProps> = ({
                         label="Filter items"
                         options={filterOptions}
                         selectedValue={filter}
-                        onChange={setFilter}
+                        onChange={(value) => setFilter(value)}
                     />
                 </footer>
             )}

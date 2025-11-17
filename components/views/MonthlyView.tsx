@@ -1,9 +1,11 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { Routine } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getMonthGrid, isRoutineOnDate, getDayNames } from '../../utils/calendar';
 import CalendarItem from '../ui/CalendarItem';
+import { useModal } from '../../contexts/ModalContext';
 
 interface MonthlyViewProps {
     routines: Routine[];
@@ -17,6 +19,7 @@ type ScheduledItem = {
 const MonthlyView: React.FC<MonthlyViewProps> = ({ routines }) => {
     const { themeConfig, startOfWeek } = useTheme();
     const [currentMonth, setCurrentMonth] = useState(new Date());
+    const { openRoutineDetailModal } = useModal();
 
     const monthGridDays = useMemo(() => getMonthGrid(currentMonth, startOfWeek), [currentMonth, startOfWeek]);
 
@@ -91,13 +94,15 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ routines }) => {
                                 <div className="flex-shrink-0 text-center mb-1">
                                     <span className={`text-xs font-medium ${isToday ? 'bg-accent text-white rounded-full w-5 h-5 inline-flex items-center justify-center' : themeConfig.textColor}`}>{day.getDate()}</span>
                                 </div>
-                                <div className="flex-1 space-y-1 overflow-y-auto pr-1 -mr-1">
+                                <div className="flex-1 flex flex-wrap gap-1 content-start overflow-y-auto p-1 -m-1">
                                     {items.map(item => (
                                         <CalendarItem
                                             key={`${item.type}-${item.data.id}`}
                                             title={item.data.name}
+                                            icon={item.data.icon}
                                             color={item.type === 'routine' ? item.data.color : undefined}
                                             type={item.type}
+                                            onClick={() => openRoutineDetailModal(item.data)}
                                         />
                                     ))}
                                 </div>

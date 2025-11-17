@@ -26,6 +26,11 @@ interface ModalContextType {
     confirm: (props: ConfirmModalProps) => void;
     handleConfirm: () => void;
     handleCancelConfirm: () => void;
+    
+    isRoutineDetailModalOpen: boolean;
+    detailRoutine: Routine | null;
+    openRoutineDetailModal: (routine: Routine) => void;
+    closeRoutineDetailModal: () => void;
 }
 
 const ModalContext = createContext<ModalContextType | undefined>(undefined);
@@ -77,14 +82,33 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setTimeout(() => setConfirmModalProps(null), DURATION_NORMAL);
     }, []);
 
+    // Routine Detail Modal State
+    const [isRoutineDetailModalOpen, setIsRoutineDetailModalOpen] = useState(false);
+    const [detailRoutine, setDetailRoutine] = useState<Routine | null>(null);
+
+    const openRoutineDetailModal = useCallback((routine: Routine) => {
+        setDetailRoutine(routine);
+        setIsRoutineDetailModalOpen(true);
+    }, []);
+
+    const closeRoutineDetailModal = useCallback(() => {
+        setIsRoutineDetailModalOpen(false);
+        // Delay clearing data to allow for exit animation
+        setTimeout(() => {
+            setDetailRoutine(null);
+        }, DURATION_NORMAL);
+    }, []);
+
     const value = useMemo(() => ({
         isRoutineModalMounted, isRoutineModalOpen, openRoutineModal, closeRoutineModal, handleRoutineModalExited,
         editingRoutine, openRoutineModalForEdit,
-        isConfirmModalOpen, confirmModalProps, confirm, handleConfirm, handleCancelConfirm
+        isConfirmModalOpen, confirmModalProps, confirm, handleConfirm, handleCancelConfirm,
+        isRoutineDetailModalOpen, detailRoutine, openRoutineDetailModal, closeRoutineDetailModal,
     }), [
         isRoutineModalMounted, isRoutineModalOpen, openRoutineModal, closeRoutineModal, handleRoutineModalExited,
         editingRoutine, openRoutineModalForEdit,
-        isConfirmModalOpen, confirmModalProps, confirm, handleConfirm, handleCancelConfirm
+        isConfirmModalOpen, confirmModalProps, confirm, handleConfirm, handleCancelConfirm,
+        isRoutineDetailModalOpen, detailRoutine, openRoutineDetailModal, closeRoutineDetailModal,
     ]);
 
     return <ModalContext.Provider value={value}>{children}</ModalContext.Provider>;

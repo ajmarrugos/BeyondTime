@@ -9,15 +9,13 @@ import { Routine } from '../../types';
 interface ClockDisplayProps {
     showGlow?: boolean;
     routines: Routine[];
-    completedTasks: Record<number, number[]>;
-    onNavigateToRoutines: () => void;
+    onItemClick: (routine: Routine) => void;
 }
 
 const ClockDisplay: React.FC<ClockDisplayProps> = ({ 
     showGlow = false,
     routines,
-    completedTasks,
-    onNavigateToRoutines,
+    onItemClick,
 }) => {
     const { themeConfig, clockLayout, clockEffects } = useTheme();
 
@@ -127,8 +125,7 @@ const ClockDisplay: React.FC<ClockDisplayProps> = ({
                             </p>
                             <TodaySummaryCard
                                 todaysRoutines={todaysRoutines}
-                                completedTasks={completedTasks}
-                                onNavigateToRoutines={onNavigateToRoutines}
+                                onItemClick={onItemClick}
                             />
                         </>
                     )}
@@ -153,8 +150,7 @@ const ClockDisplay: React.FC<ClockDisplayProps> = ({
                     </p>
                     <TodaySummaryCard
                         todaysRoutines={todaysRoutines}
-                        completedTasks={completedTasks}
-                        onNavigateToRoutines={onNavigateToRoutines}
+                        onItemClick={onItemClick}
                     />
                 </>
             )}

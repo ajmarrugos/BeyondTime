@@ -1,9 +1,11 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { Routine } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getWeek, isRoutineOnDate, getDayNames } from '../../utils/calendar';
 import CalendarItem from '../ui/CalendarItem';
+import { useModal } from '../../contexts/ModalContext';
 
 interface WeeklyViewProps {
     routines: Routine[];
@@ -17,6 +19,7 @@ type ScheduledItem = {
 const WeeklyView: React.FC<WeeklyViewProps> = ({ routines }) => {
     const { themeConfig, startOfWeek } = useTheme();
     const [currentDate, setCurrentDate] = useState(new Date());
+    const { openRoutineDetailModal } = useModal();
 
     const weekDays = useMemo(() => getWeek(currentDate, startOfWeek), [currentDate, startOfWeek]);
 
@@ -93,13 +96,15 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({ routines }) => {
                                 <div className="flex-shrink-0 text-center mb-2">
                                     <span className={`text-sm font-medium ${isToday ? themeConfig.textColor : themeConfig.subtextColor}`}>{day.getDate()}</span>
                                 </div>
-                                <div className="flex-1 space-y-1.5 overflow-y-auto pr-1 -mr-1">
+                                <div className="flex-1 flex flex-wrap gap-1 content-start overflow-y-auto p-1 -m-1">
                                     {items.map(item => (
                                         <CalendarItem
                                             key={`${item.type}-${item.data.id}`}
                                             title={item.data.name}
+                                            icon={item.data.icon}
                                             color={item.type === 'routine' ? item.data.color : undefined}
                                             type={item.type}
+                                            onClick={() => openRoutineDetailModal(item.data)}
                                         />
                                     ))}
                                 </div>

@@ -1,5 +1,6 @@
 
 
+
 import React, { useCallback, useRef, useEffect, memo, useState, useMemo } from 'react';
 
 // Hooks
@@ -28,11 +29,13 @@ import ConfirmModal from './components/modals/ConfirmModal';
 import SwipeableLayout from './components/SwipeableLayout';
 import ToastContainer from './components/ToastContainer';
 import NotificationManager from './components/NotificationManager';
+import RoutineDetailModal from './components/modals/RoutineDetailModal';
 
 
 // Config
 import { blobConfigurations } from './config/blobs';
 import { SCROLL_THROTTLE_MS } from './config/constants';
+import { Routine } from './types';
 
 // Memoized Views for performance
 const MemoRoutinesView = memo(RoutinesView);
@@ -48,7 +51,8 @@ const App: React.FC = () => {
   const { getVisibleRoutines, canViewSettingsPanel } = usePermissions();
   const {
     isRoutineModalMounted, isRoutineModalOpen, closeRoutineModal, handleRoutineModalExited,
-    isConfirmModalOpen, confirmModalProps, handleConfirm, handleCancelConfirm
+    isConfirmModalOpen, confirmModalProps, handleConfirm, handleCancelConfirm,
+    isRoutineDetailModalOpen, detailRoutine, openRoutineDetailModal, closeRoutineDetailModal,
   } = useModal();
   const { isSettingsOpen, openSettings, closeSettings } = useSettingsPanel();
   const { isDraggingRoutine } = useDragState();
@@ -108,6 +112,10 @@ const App: React.FC = () => {
     handleSetView(1); // 1 is the clock view
     setShowClockGlow(true);
   }, [handleSetView]);
+
+  const handleItemClick = useCallback((routine: Routine) => {
+    openRoutineDetailModal(routine);
+  }, [openRoutineDetailModal]);
 
   useEffect(() => {
     if (showClockGlow) {
@@ -229,8 +237,7 @@ const App: React.FC = () => {
                     <MemoClockView 
                         showGlow={showClockGlow} 
                         routines={routinesAndEvents}
-                        completedTasks={completedTasks}
-                        onNavigateToRoutines={() => handleSetView(0)}
+                        onItemClick={handleItemClick}
                     />
                 </section>
                 <section className="w-full h-full flex-shrink-0">
@@ -278,6 +285,16 @@ const App: React.FC = () => {
               onCancel={handleCancelConfirm}
               confirmText={confirmModalProps.confirmText}
               cancelText={confirmModalProps.cancelText}
+            />
+          )}
+          
+          {isRoutineDetailModalOpen && detailRoutine && (
+            <RoutineDetailModal
+                isOpen={isRoutineDetailModalOpen}
+                onClose={closeRoutineDetailModal}
+                routine={detailRoutine}
+                completedTasks={completedTasks}
+                onToggleTask={handleToggleTask}
             />
           )}
         </>

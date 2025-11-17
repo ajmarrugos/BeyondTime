@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo } from 'react';
 import WeeklyView from './WeeklyView';
 import MonthlyView from './MonthlyView';
@@ -12,8 +13,7 @@ type SubView = 'clock' | 'weekly' | 'monthly';
 interface ClockViewProps {
     showGlow?: boolean;
     routines: Routine[];
-    completedTasks: Record<number, number[]>;
-    onNavigateToRoutines: () => void;
+    onItemClick: (routine: Routine) => void;
 }
 
 const ClockView: React.FC<ClockViewProps> = (props) => {
@@ -37,7 +37,7 @@ const ClockView: React.FC<ClockViewProps> = (props) => {
                     label="Clock View Type"
                     options={switcherOptions}
                     selectedValue={activeSubView}
-                    onChange={setActiveSubView}
+                    onChange={(value) => setActiveSubView(value)}
                 />
             </footer>
         </div>
