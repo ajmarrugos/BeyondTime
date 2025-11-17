@@ -23,7 +23,6 @@ export const useClockInteraction = (
 
     const clockRef = useRef<HTMLDivElement>(null);
     const longPressTimeoutRef = useRef<number | null>(null);
-    // FIX: Initialize useRef with a value to satisfy its signature.
     const animationFrameRef = useRef<number | undefined>(undefined);
     const lastUserSetTimeRef = useRef<number | null>(null);
     const setTimeFromCoordsRef = useRef<(x: number, y: number) => void>(() => {});

@@ -1,3 +1,4 @@
+import { ThemeName } from "../config/themes";
 
 export interface Team {
   id: number;
@@ -5,6 +6,24 @@ export interface Team {
 }
 
 export type Role = 'Admin' | 'Owner' | 'Member';
+
+// --- Personalization ---
+export type ClockLayout = 'luxury' | 'minimalist' | 'digital' | 'pro';
+export type StartOfWeek = 'sunday' | 'monday';
+export interface ClockEffects {
+    sweepingSecondHand: boolean;
+    parallax: boolean;
+    glint: boolean;
+}
+export interface PersonalizationSettings {
+    theme: ThemeName;
+    accentColor: string;
+    clockLayout: ClockLayout;
+    clockEffects: ClockEffects;
+    startOfWeek: StartOfWeek;
+    animationSpeed: number;
+}
+
 
 export interface Member {
   id: number;
@@ -15,9 +34,9 @@ export interface Member {
   phone?: string;
   timezone?: string;
   shareData?: boolean;
+  personalization?: PersonalizationSettings;
 }
 
-// Fix: Extracted Task into its own interface to make it reusable and exportable.
 export interface Task {
   id: number;
   text: string;

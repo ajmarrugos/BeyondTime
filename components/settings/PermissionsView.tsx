@@ -46,7 +46,6 @@ const PermissionsView: React.FC = () => {
 
     // Countdown timer effect for admin edit window
     useEffect(() => {
-        // FIX: Use ReturnType<typeof setTimeout> for browser compatibility instead of NodeJS.Timeout.
         let timerId: ReturnType<typeof setTimeout>;
         if (isAdminEditEnabled && adminEditTimeRemaining > 0) {
             timerId = setTimeout(() => {

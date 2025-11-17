@@ -1,9 +1,11 @@
 
 
 
+
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { useTheme, ClockLayout, ClockEffects } from '../contexts/ThemeContext';
-import { Routine } from '../types';
+// FIX: Import ClockLayout and ClockEffects from types/index.ts, not ThemeContext.
+import { useTheme } from '../contexts/ThemeContext';
+import { Routine, ClockLayout, ClockEffects } from '../types';
 import { useDevice } from '../contexts/DeviceContext';
 import { useDeviceMotion } from '../contexts/DeviceMotionContext';
 

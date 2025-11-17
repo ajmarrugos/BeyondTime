@@ -26,10 +26,10 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <DeviceProvider>
-        <ThemeProvider>
-          <ToastProvider>
-            <MembersProvider>
-              <AuthProvider>
+        <ToastProvider>
+          <MembersProvider>
+            <AuthProvider>
+              <ThemeProvider>
                 <RoutinesProvider>
                   <NotificationProvider>
                     <SettingsPanelProvider>
@@ -45,10 +45,10 @@ root.render(
                     </SettingsPanelProvider>
                   </NotificationProvider>
                 </RoutinesProvider>
-              </AuthProvider>
-            </MembersProvider>
-          </ToastProvider>
-        </ThemeProvider>
+              </ThemeProvider>
+            </AuthProvider>
+          </MembersProvider>
+        </ToastProvider>
       </DeviceProvider>
     </ErrorBoundary>
   </React.StrictMode>

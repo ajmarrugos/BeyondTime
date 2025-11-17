@@ -1,6 +1,5 @@
 import React, { useState, useEffect, memo } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
-// Fix: DURATION_NORMAL is exported from constants.ts, not animations.ts.
 import { DURATION_NORMAL } from '../config/constants';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 

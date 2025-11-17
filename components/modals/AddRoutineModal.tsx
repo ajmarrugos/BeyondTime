@@ -147,8 +147,8 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ isOpen, onExited, ...
             if (itemType === 'Routine' || itemType === 'Event') {
                 const startTimeMinutes = parseInt(state.startTime.split(':')[0]) * 60 + parseInt(state.startTime.split(':')[1]);
                 const endTimeMinutes = parseInt(state.endTime.split(':')[0]) * 60 + parseInt(state.endTime.split(':')[1]);
-                 if (endTimeMinutes <= startTimeMinutes) {
-                    newErrors.endTime = 'End time must be after start time for overnight routines.';
+                 if (endTimeMinutes === startTimeMinutes) {
+                    newErrors.endTime = 'End time cannot be the same as start time.';
                 }
             }
 

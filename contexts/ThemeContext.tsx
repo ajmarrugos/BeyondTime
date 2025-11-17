@@ -1,17 +1,8 @@
-
 import React, { createContext, useContext, useMemo, useEffect } from 'react';
 import { themes, Theme, ThemeName } from '../config/themes';
 import usePersistentState from '../hooks/usePersistentState';
-
-// --- New Types for Clock Customization ---
-export type ClockLayout = 'luxury' | 'minimalist' | 'digital' | 'pro';
-export type StartOfWeek = 'sunday' | 'monday';
-
-export interface ClockEffects {
-    sweepingSecondHand: boolean;
-    parallax: boolean;
-    glint: boolean;
-}
+import { ClockLayout, ClockEffects, StartOfWeek } from '../types';
+import { useAuth } from './AuthContext';
 
 interface ThemeContextType {
     themeConfig: Theme;
@@ -19,18 +10,19 @@ interface ThemeContextType {
     accentColor: string;
     handleThemeChange: (themeName: ThemeName) => void;
     handleAccentColorChange: (color: string) => void;
-    // New clock settings
+    
     clockLayout: ClockLayout;
     clockEffects: ClockEffects;
     handleClockLayoutChange: (layout: ClockLayout) => void;
     handleClockEffectChange: (effect: keyof ClockEffects, value: boolean) => void;
-    // New week start setting
+    setClockEffects: (effects: ClockEffects) => void; // For loading all effects at once
+    
     startOfWeek: StartOfWeek;
     handleStartOfWeekChange: (day: StartOfWeek) => void;
-    // New animation speed setting
+    
     animationSpeed: number;
     handleAnimationSpeedChange: (speed: number) => void;
-    // New timezone setting
+    
     timezone: string;
     handleTimezoneChange: (tz: string) => void;
 }
@@ -46,13 +38,14 @@ const getDefaultTimezone = () => {
 };
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { currentUser } = useAuth(); // Now available due to provider reordering
+
     const [currentTheme, setCurrentTheme] = usePersistentState<ThemeName>('theme', 'dark');
     const [accentColor, setAccentColor] = usePersistentState<string>('accentColor', '#6366f1');
     const [startOfWeek, setStartOfWeek] = usePersistentState<StartOfWeek>('startOfWeek', 'sunday');
     const [animationSpeed, setAnimationSpeed] = usePersistentState<number>('animationSpeed', 1);
     const [timezone, setTimezone] = usePersistentState<string>('timezone', getDefaultTimezone());
 
-    // --- State for Clock Settings ---
     const [clockLayout, setClockLayout] = usePersistentState<ClockLayout>('clockLayout', 'luxury');
     const [clockEffects, setClockEffects] = usePersistentState<ClockEffects>('clockEffects', {
         sweepingSecondHand: true,
@@ -60,37 +53,32 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         glint: true,
     });
 
+    // Auto-load personalization settings on login
+    useEffect(() => {
+        if (currentUser?.personalization) {
+            const p = currentUser.personalization;
+            setCurrentTheme(p.theme);
+            setAccentColor(p.accentColor);
+            setClockLayout(p.clockLayout);
+            setClockEffects(p.clockEffects);
+            setStartOfWeek(p.startOfWeek);
+            setAnimationSpeed(p.animationSpeed);
+        }
+    }, [currentUser, setCurrentTheme, setAccentColor, setClockLayout, setClockEffects, setStartOfWeek, setAnimationSpeed]);
+
     useEffect(() => {
         document.documentElement.style.setProperty('--accent-color', accentColor);
     }, [accentColor]);
 
-    const handleThemeChange = (themeName: ThemeName) => {
-        setCurrentTheme(themeName);
-    };
-  
-    const handleAccentColorChange = (color: string) => {
-        setAccentColor(color);
-    };
-
-    const handleClockLayoutChange = (layout: ClockLayout) => {
-        setClockLayout(layout);
-    };
-
+    const handleThemeChange = (themeName: ThemeName) => setCurrentTheme(themeName);
+    const handleAccentColorChange = (color: string) => setAccentColor(color);
+    const handleClockLayoutChange = (layout: ClockLayout) => setClockLayout(layout);
     const handleClockEffectChange = (effect: keyof ClockEffects, value: boolean) => {
         setClockEffects(prev => ({ ...prev, [effect]: value }));
     };
-
-    const handleStartOfWeekChange = (day: StartOfWeek) => {
-        setStartOfWeek(day);
-    };
-
-    const handleAnimationSpeedChange = (speed: number) => {
-        setAnimationSpeed(speed);
-    };
-
-    const handleTimezoneChange = (tz: string) => {
-        setTimezone(tz);
-    };
+    const handleStartOfWeekChange = (day: StartOfWeek) => setStartOfWeek(day);
+    const handleAnimationSpeedChange = (speed: number) => setAnimationSpeed(speed);
+    const handleTimezoneChange = (tz: string) => setTimezone(tz);
 
     const themeConfig = themes[currentTheme];
     
@@ -104,6 +92,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         clockEffects,
         handleClockLayoutChange,
         handleClockEffectChange,
+        setClockEffects,
         startOfWeek,
         handleStartOfWeekChange,
         animationSpeed,
