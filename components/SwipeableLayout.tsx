@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { useDevice } from '../contexts/DeviceContext';
 import { SWIPE_THRESHOLD } from '../config/constants';
+import { vibrate } from '../utils/haptics';
 
 interface SwipeableLayoutProps {
     currentView: number;
@@ -52,12 +53,19 @@ const SwipeableLayout: React.FC<SwipeableLayoutProps> = ({
     const handleTouchEnd = () => {
         if (!isSwiping || isInteractionDisabled || isDesktop) return;
 
+        let viewChanged = false;
         if (Math.abs(swipeOffset.current) > SWIPE_THRESHOLD) {
             if (swipeOffset.current < 0 && currentView < viewCount - 1) { // Swipe left
                 onViewChange(currentView + 1);
+                viewChanged = true;
             } else if (swipeOffset.current > 0 && currentView > 0) { // Swipe right
                 onViewChange(currentView - 1);
+                viewChanged = true;
             }
+        }
+        
+        if (viewChanged) {
+            vibrate();
         }
 
         setIsSwiping(false);

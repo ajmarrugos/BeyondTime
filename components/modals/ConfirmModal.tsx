@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { vibrate } from '../../utils/haptics';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -38,6 +39,11 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, [isOpen, onCancel]);
+
+    const handleConfirmClick = () => {
+        onConfirm();
+        vibrate([50, 100, 50]);
+    };
     
     return (
         <div
@@ -69,7 +75,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                         {cancelText}
                     </button>
                     <button
-                        onClick={onConfirm}
+                        onClick={handleConfirmClick}
                         className={`px-5 py-2.5 rounded-full text-sm font-semibold text-white bg-red-600 hover:bg-red-500 hover:shadow-lg hover:shadow-red-600/30 transition-all`}
                     >
                         {confirmText}

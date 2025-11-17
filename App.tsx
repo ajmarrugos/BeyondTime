@@ -1,6 +1,3 @@
-
-
-
 import React, { useCallback, useRef, useEffect, memo, useState, useMemo } from 'react';
 
 // Hooks
@@ -12,6 +9,8 @@ import { useModal } from './contexts/ModalContext';
 import { useSettingsPanel } from './contexts/SettingsPanelContext';
 import { useDragState } from './contexts/DragStateContext';
 import usePersistentState from './hooks/usePersistentState';
+import { useCurrentTime } from './hooks/useCurrentTime';
+import { useAppData } from './contexts/AppDataContext';
 
 
 // Components
@@ -30,12 +29,16 @@ import SwipeableLayout from './components/SwipeableLayout';
 import ToastContainer from './components/ToastContainer';
 import NotificationManager from './components/NotificationManager';
 import RoutineDetailModal from './components/modals/RoutineDetailModal';
+import AddMemberModal from './components/modals/AddMemberModal';
+import EditMemberModal from './components/modals/EditMemberModal';
+import TeamSettingsModal from './components/modals/TeamSettingsModal';
 
 
 // Config
 import { blobConfigurations } from './config/blobs';
 import { SCROLL_THROTTLE_MS } from './config/constants';
 import { Routine } from './types';
+import { ThemeName } from './config/themes';
 
 // Memoized Views for performance
 const MemoRoutinesView = memo(RoutinesView);
@@ -46,32 +49,54 @@ const MemoTasksView = memo(TasksView);
 // --- Main App Component ---
 
 const App: React.FC = () => {
-  const { themeConfig } = useTheme();
+  const { themeConfig, handleThemeChange, currentTheme, timezone } = useTheme();
   const { currentUser } = useAuth();
   const { getVisibleRoutines, canViewSettingsPanel } = usePermissions();
   const {
     isRoutineModalMounted, isRoutineModalOpen, closeRoutineModal, handleRoutineModalExited,
     isConfirmModalOpen, confirmModalProps, handleConfirm, handleCancelConfirm,
     isRoutineDetailModalOpen, detailRoutine, openRoutineDetailModal, closeRoutineDetailModal,
+    isAddMemberModalOpen, closeAddMemberModal,
+    isEditMemberModalOpen, closeEditMemberModal, memberToEdit,
+    isTeamSettingsModalOpen, closeTeamSettingsModal,
   } = useModal();
   const { isSettingsOpen, openSettings, closeSettings } = useSettingsPanel();
   const { isDraggingRoutine } = useDragState();
+  const { routines, members, teams } = useAppData();
  
   // View state and scroll handling
   const [currentView, setCurrentView] = useState(1); // 0:Routines, 1:Clock, 2:Tasks
+  const [clockViewKey, setClockViewKey] = useState(0);
   const appRef = useRef<HTMLElement>(null);
   const lastScrollTime = useRef(0);
   
   const device = useDevice();
   const viewCount = 3;
   
+  // --- Data Filtering Logic ---
+
+  // For list views (Routines, Tasks), get routines based on user permissions
   const visibleRoutines = getVisibleRoutines();
 
-  // Split routines into two categories for the different views
-  const routinesAndEvents = useMemo(() => 
+  // For the Clock view (Today, Week, Month), ONLY get routines for the current user
+  const clockViewRoutines = useMemo(() => {
+    if (!currentUser) return [];
+    return routines.filter(r => r.memberId === currentUser.id);
+  }, [routines, currentUser]);
+  
+  // Routines & Events for the list view (permission-based)
+  const routinesAndEventsForListView = useMemo(() => 
       visibleRoutines.filter(r => r.tags.includes('Routine') || r.tags.includes('Event')), 
       [visibleRoutines]
   );
+
+  // Routines & Events for the clock view (current user only)
+  const routinesAndEventsForClockView = useMemo(() =>
+      clockViewRoutines.filter(r => r.tags.includes('Routine') || r.tags.includes('Event')),
+      [clockViewRoutines]
+  );
+  
+  // Tasks & Payments for the list view (permission-based)
   const tasksAndPayments = useMemo(() => 
       visibleRoutines.filter(r => r.tags.includes('Task') || r.tags.includes('Payment')),
       [visibleRoutines]
@@ -82,6 +107,13 @@ const App: React.FC = () => {
 
   // State for completed tasks, lifted from RoutinesView to be shared
   const [completedTasks, setCompletedTasks] = usePersistentState<Record<number, number[]>>('completedTasks', {});
+  
+  // Sleep Mode State
+  const [isSleepModeActive, setIsSleepModeActive] = useState(false);
+  const originalThemeRef = useRef<ThemeName | null>(null);
+  const currentTime = useCurrentTime();
+
+  const anyModalOpen = isSettingsOpen || isRoutineModalOpen || isAddMemberModalOpen || isEditMemberModalOpen || isTeamSettingsModalOpen;
 
   const handleToggleTask = useCallback((routineId: number, taskId: number) => {
     setCompletedTasks(prev => {
@@ -109,13 +141,59 @@ const App: React.FC = () => {
   }, []);
 
   const handleLogoClick = useCallback(() => {
-    handleSetView(1); // 1 is the clock view
+    handleSetView(1); // Switch to the clock view.
+    setClockViewKey(k => k + 1); // Force remount to reset its internal state (e.g. from 'weekly' back to 'clock').
     setShowClockGlow(true);
   }, [handleSetView]);
 
   const handleItemClick = useCallback((routine: Routine) => {
     openRoutineDetailModal(routine);
   }, [openRoutineDetailModal]);
+
+    // Effect for Sleep Mode Detection
+    useEffect(() => {
+        const sleepTags = ['sleep', 'rest', 'nap', 'lay down'];
+
+        const activeSleepRoutine = routinesAndEventsForClockView.find(routine => {
+            const hasSleepTag = routine.tags.some(tag => sleepTags.includes(tag.toLowerCase()));
+            if (!hasSleepTag) return false;
+
+            const timeInTimezone = new Date(currentTime.toLocaleString('en-US', { timeZone: timezone }));
+            const nowInMinutes = timeInTimezone.getHours() * 60 + timeInTimezone.getMinutes();
+
+            const [startHour, startMinute] = routine.startTime.split(':').map(Number);
+            const startTimeInMinutes = startHour * 60 + startMinute;
+
+            const [endHour, endMinute] = routine.endTime.split(':').map(Number);
+            let endTimeInMinutes = endHour * 60 + endMinute;
+
+            // Handle overnight schedules (e.g., 22:00 to 06:00)
+            if (endTimeInMinutes <= startTimeInMinutes) {
+                return nowInMinutes >= startTimeInMinutes || nowInMinutes < endTimeInMinutes;
+            }
+            
+            // Handle same-day schedules
+            return nowInMinutes >= startTimeInMinutes && nowInMinutes < endTimeInMinutes;
+        });
+
+        setIsSleepModeActive(!!activeSleepRoutine);
+    }, [currentTime, routinesAndEventsForClockView, timezone]);
+
+    // Effect for Theme Switching based on Sleep Mode
+    useEffect(() => {
+        if (isSleepModeActive) {
+            if (currentTheme !== 'moon') {
+                originalThemeRef.current = currentTheme;
+                handleThemeChange('moon');
+            }
+        } else {
+            if (originalThemeRef.current && currentTheme === 'moon') {
+                handleThemeChange(originalThemeRef.current);
+                originalThemeRef.current = null; // Clear ref after restoring
+            }
+        }
+    }, [isSleepModeActive, currentTheme, handleThemeChange]);
+
 
   useEffect(() => {
     if (showClockGlow) {
@@ -127,7 +205,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (!device.isDesktop || isRoutineModalOpen || isSettingsOpen) return;
+      if (!device.isDesktop || anyModalOpen) return;
 
       const now = Date.now();
       // Throttle scroll events to prevent rapid view changes
@@ -160,11 +238,11 @@ const App: React.FC = () => {
             mainElement.removeEventListener('wheel', handleWheel);
         }
     };
-  }, [currentView, device.isDesktop, handleSetView, viewCount, isRoutineModalOpen, isSettingsOpen]);
+  }, [currentView, device.isDesktop, handleSetView, viewCount, anyModalOpen]);
 
   // Effect to prevent body scroll when modals are open
   useEffect(() => {
-    if (isSettingsOpen || isRoutineModalOpen) {
+    if (anyModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -173,7 +251,7 @@ const App: React.FC = () => {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isSettingsOpen, isRoutineModalOpen]);
+  }, [anyModalOpen]);
 
   return (
     <main 
@@ -202,9 +280,18 @@ const App: React.FC = () => {
           <div className="relative z-10 flex flex-col w-full h-full">
             {/* Header */}
             <header className="flex-shrink-0 pt-4 px-6 md:pt-6 md:px-8 flex items-center justify-between">
-                <button onClick={handleLogoClick} aria-label="Go to Clock View">
-                  <Logo className={`h-10 w-10 ${themeConfig.textColor} transition-transform hover:scale-110`} />
-                </button>
+                <div className="flex items-center space-x-3">
+                  <button onClick={handleLogoClick} aria-label="Go to Clock View">
+                    <Logo className={`h-10 w-10 ${themeConfig.textColor} transition-transform hover:scale-110`} />
+                  </button>
+                  {isSleepModeActive && (
+                      <div title="Sleep Mode Active" style={{ animation: 'sleep-pulse 2.5s ease-in-out infinite' }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${themeConfig.textColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                          </svg>
+                      </div>
+                  )}
+                </div>
                 {canViewSettingsPanel() && (
                   <button
                       onClick={openSettings}
@@ -224,20 +311,24 @@ const App: React.FC = () => {
                 currentView={currentView}
                 viewCount={viewCount}
                 onViewChange={handleSetView}
-                isInteractionDisabled={isRoutineModalOpen || isSettingsOpen}
+                isInteractionDisabled={anyModalOpen}
             >
                 <section className="w-full h-full flex-shrink-0">
                   <MemoRoutinesView 
-                    routines={routinesAndEvents}
+                    routines={routinesAndEventsForListView}
                     completedTasks={completedTasks}
                     onToggleTask={handleToggleTask}
                   />
                 </section>
                 <section className="w-full h-full flex-shrink-0">
                     <MemoClockView 
+                        key={clockViewKey}
                         showGlow={showClockGlow} 
-                        routines={routinesAndEvents}
+                        routines={routinesAndEventsForClockView}
                         onItemClick={handleItemClick}
+                        allRoutines={routines}
+                        members={members}
+                        teams={teams}
                     />
                 </section>
                 <section className="w-full h-full flex-shrink-0">
@@ -297,6 +388,20 @@ const App: React.FC = () => {
                 onToggleTask={handleToggleTask}
             />
           )}
+
+          <AddMemberModal 
+            isOpen={isAddMemberModalOpen}
+            onClose={closeAddMemberModal}
+          />
+          <EditMemberModal 
+            isOpen={isEditMemberModalOpen}
+            onClose={closeEditMemberModal}
+            member={memberToEdit}
+          />
+          <TeamSettingsModal
+            isOpen={isTeamSettingsModalOpen}
+            onClose={closeTeamSettingsModal}
+          />
         </>
       )}
     </main>

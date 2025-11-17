@@ -7,13 +7,12 @@ import { useFocusTrap } from '../hooks/useFocusTrap';
 // Sub-views
 import MainMenuView from './settings/MainMenuView';
 import AppearanceSettingsView from './settings/AppearanceSettingsView';
-import MemberManagementView from './settings/MemberManagementView';
 import IntegrationsDataView from './settings/IntegrationsDataView';
 import PermissionsView from './settings/PermissionsView';
 import NotificationsView from './settings/NotificationsView';
 import AboutView from './settings/AboutView';
 
-type MenuView = 'main' | 'settings' | 'members' | 'integrations' | 'permissions' | 'notifications' | 'about';
+type MenuView = 'main' | 'settings' | 'integrations' | 'permissions' | 'notifications' | 'about';
 
 interface SettingsPanelProps {
     isOpen: boolean;
@@ -23,7 +22,6 @@ interface SettingsPanelProps {
 const viewTitles: Record<MenuView, string> = {
     main: 'Menu',
     settings: 'Appearance',
-    members: 'Manage Members',
     integrations: 'Integrations & Data',
     permissions: 'Roles & Permissions',
     notifications: 'Notifications',
@@ -54,8 +52,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
                 return <div className={`${commonStyle} ${activeStyle}`}><MainMenuView setMenuView={setMenuView} /></div>;
             case 'settings':
                 return <div className={`${commonStyle} ${activeStyle}`}><AppearanceSettingsView /></div>;
-            case 'members':
-                return <div className={`${commonStyle} ${activeStyle}`}><MemberManagementView /></div>;
             case 'integrations':
                 return <div className={`${commonStyle} ${activeStyle}`}><IntegrationsDataView /></div>;
             case 'permissions':
@@ -98,7 +94,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
                 <div className="relative flex-1 overflow-hidden">
                     {renderView('main')}
                     {renderView('settings')}
-                    {renderView('members')}
                     {renderView('integrations')}
                     {renderView('permissions')}
                     {renderView('notifications')}

@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useReducer, useMemo, useEffect, useRef } from 'react';
 import { routineColors, routineIcons } from '../../config/routineOptions';
 import ColorPicker from '../forms/ColorPicker';
@@ -20,6 +16,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useAppData } from '../../contexts/AppDataContext';
 import { useModal } from '../../contexts/ModalContext';
+import { vibrate } from '../../utils/haptics';
 
 interface AddRoutineModalProps {
     isOpen: boolean;
@@ -99,7 +96,7 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ isOpen, onExited, ...
     const { themeConfig } = useTheme();
     const { getAssignableMembers } = usePermissions();
     const { addRoutine, updateRoutine } = useAppData();
-    const { editingRoutine } = useModal();
+    const { editingRoutine, preselectedMemberId } = useModal();
     const { addToast } = useToast();
     const availableMembers = getAssignableMembers();
     const isEditMode = !!editingRoutine;
@@ -120,12 +117,15 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ isOpen, onExited, ...
                 else if (editingRoutine.tags.includes('Payment')) setItemType('Payment');
                 else if (editingRoutine.tags.includes('Event')) setItemType('Event');
                 else setItemType('Routine');
+            } else if (preselectedMemberId) {
+                dispatch({ type: 'SET_FIELD', field: 'memberId', value: preselectedMemberId });
+                setItemType('Task'); // Default to task when adding for a member
             } else {
                  setItemType('Task');
             }
             setErrors({});
         }
-    }, [isOpen, editingRoutine]);
+    }, [isOpen, editingRoutine, preselectedMemberId]);
     
     useEffect(() => {
         const isTaskOrPayment = itemType === 'Task' || itemType === 'Payment';
@@ -185,10 +185,10 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ isOpen, onExited, ...
     }, [isOpen, onExited]);
 
     useEffect(() => {
-        if (!isEditMode && availableMembers.length === 1) {
+        if (!isEditMode && !preselectedMemberId && availableMembers.length === 1) {
             dispatch({ type: 'SET_FIELD', field: 'memberId', value: availableMembers[0].id });
         }
-    }, [availableMembers, isEditMode]);
+    }, [availableMembers, isEditMode, preselectedMemberId]);
     
 
     const handleLocalClose = () => {
@@ -238,6 +238,7 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ isOpen, onExited, ...
         } else {
             addRoutine(routineData);
         }
+        vibrate();
         handleLocalClose();
     };
 
@@ -310,7 +311,7 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ isOpen, onExited, ...
                                 {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
                             </div>
                             <div className="relative">
-                                <select value={state.memberId} onChange={e => dispatch({type: 'SET_FIELD', field: 'memberId', value: Number(e.target.value)})} className={`${inputBaseStyle} appearance-none ${errors.memberId ? 'border-red-500' : 'border-transparent focus:border-accent'}`} disabled={availableMembers.length <= 1 && isEditMode}>
+                                <select value={state.memberId} onChange={e => dispatch({type: 'SET_FIELD', field: 'memberId', value: Number(e.target.value)})} className={`${inputBaseStyle} appearance-none ${errors.memberId ? 'border-red-500' : 'border-transparent focus:border-accent'}`} disabled={!isEditMode && !!preselectedMemberId}>
                                     <option value="0">Select a member</option>
                                     {availableMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                                 </select>

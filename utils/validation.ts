@@ -14,6 +14,10 @@ const validateMember = (member: any): string | null => {
     if (!isNumber(member.id)) return 'Member ID must be a number.';
     if (!isString(member.name) || member.name.trim() === '') return 'Member name must be a non-empty string.';
     if (!isRole(member.role)) return 'Member role is invalid.';
+    // Optional fields
+    if (member.teamId !== undefined && !isNumber(member.teamId)) return 'Member teamId must be a number if present.';
+    if (member.phone !== undefined && !isString(member.phone)) return 'Member phone must be a string if present.';
+    if (member.timezone !== undefined && !isString(member.timezone)) return 'Member timezone must be a string if present.';
     return null;
 };
 

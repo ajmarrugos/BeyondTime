@@ -30,15 +30,27 @@ interface ThemeContextType {
     // New animation speed setting
     animationSpeed: number;
     handleAnimationSpeedChange: (speed: number) => void;
+    // New timezone setting
+    timezone: string;
+    handleTimezoneChange: (tz: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+const getDefaultTimezone = () => {
+    try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch (e) {
+        return 'UTC'; // Fallback
+    }
+};
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [currentTheme, setCurrentTheme] = usePersistentState<ThemeName>('theme', 'dark');
     const [accentColor, setAccentColor] = usePersistentState<string>('accentColor', '#6366f1');
     const [startOfWeek, setStartOfWeek] = usePersistentState<StartOfWeek>('startOfWeek', 'sunday');
     const [animationSpeed, setAnimationSpeed] = usePersistentState<number>('animationSpeed', 1);
+    const [timezone, setTimezone] = usePersistentState<string>('timezone', getDefaultTimezone());
 
     // --- State for Clock Settings ---
     const [clockLayout, setClockLayout] = usePersistentState<ClockLayout>('clockLayout', 'luxury');
@@ -76,6 +88,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setAnimationSpeed(speed);
     };
 
+    const handleTimezoneChange = (tz: string) => {
+        setTimezone(tz);
+    };
+
     const themeConfig = themes[currentTheme];
     
     const value = useMemo(() => ({
@@ -92,7 +108,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         handleStartOfWeekChange,
         animationSpeed,
         handleAnimationSpeedChange,
-    }), [themeConfig, currentTheme, accentColor, clockLayout, clockEffects, startOfWeek, animationSpeed]);
+        timezone,
+        handleTimezoneChange,
+    }), [themeConfig, currentTheme, accentColor, clockLayout, clockEffects, startOfWeek, animationSpeed, timezone]);
 
     return (
         <ThemeContext.Provider value={value}>

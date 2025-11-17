@@ -6,7 +6,7 @@ import WeeklyView from './WeeklyView';
 import MonthlyView from './MonthlyView';
 import ClockDisplay from '../ui/ClockDisplay'; // New Component
 import ViewSwitcher from '../ui/ViewSwitcher';
-import { Routine } from '../../types';
+import { Routine, Member, Team } from '../../types';
 
 type SubView = 'clock' | 'weekly' | 'monthly';
 
@@ -14,6 +14,9 @@ interface ClockViewProps {
     showGlow?: boolean;
     routines: Routine[];
     onItemClick: (routine: Routine) => void;
+    allRoutines: Routine[];
+    members: Member[];
+    teams: Team[];
 }
 
 const ClockView: React.FC<ClockViewProps> = (props) => {
@@ -27,7 +30,7 @@ const ClockView: React.FC<ClockViewProps> = (props) => {
 
     return (
         <div className="w-full h-full flex flex-col items-center z-10 p-6 pt-0">
-            <div className="w-full flex-1 flex flex-col items-center justify-center overflow-hidden">
+            <div className="w-full flex-1 flex flex-col items-center justify-start overflow-y-auto pt-8">
                 {activeSubView === 'clock' && <ClockDisplay {...props} />}
                 {activeSubView === 'weekly' && <WeeklyView routines={props.routines} />}
                 {activeSubView === 'monthly' && <MonthlyView routines={props.routines} />}

@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { useTheme, ClockLayout, ClockEffects, StartOfWeek } from '../../contexts/ThemeContext';
 import { lightThemeOptions, darkThemeOptions } from '../../config/themes';
+import { timezones } from '../../config/timezones';
 import ColorPicker from '../forms/ColorPicker';
 import ToggleSwitch from '../forms/ToggleSwitch';
 import { useDevice } from '../../contexts/DeviceContext';
@@ -39,7 +41,9 @@ const AppearanceSettingsView: React.FC = () => {
         startOfWeek,
         handleStartOfWeekChange,
         animationSpeed,
-        handleAnimationSpeedChange
+        handleAnimationSpeedChange,
+        timezone,
+        handleTimezoneChange,
     } = useTheme();
     const { isDesktop } = useDevice();
     const { permissionStatus, requestPermission } = useDeviceMotion();
@@ -99,6 +103,53 @@ const AppearanceSettingsView: React.FC = () => {
             <ExpandableSection title="Accent Color">
                 <ColorPicker colors={accentColors} selectedColor={accentColor} onSelectColor={handleAccentColorChange} />
             </ExpandableSection>
+            
+            <ExpandableSection title="Time & Date">
+                <div className="space-y-4">
+                    <div>
+                        <label htmlFor="timezone-select" className={`text-sm font-medium mb-2 block ${themeConfig.textColor}`}>Timezone</label>
+                        <div className="relative">
+                            <select
+                                id="timezone-select"
+                                value={timezone}
+                                onChange={(e) => handleTimezoneChange(e.target.value)}
+                                className={`w-full p-3.5 rounded-xl bg-black/10 ${themeConfig.textColor} placeholder-gray-400/70 focus:outline-none focus:ring-2 focus:ring-accent appearance-none`}
+                            >
+                                {timezones.map(group => (
+                                    <optgroup key={group.group} label={group.group}>
+                                        {group.zones.map(zone => (
+                                            <option key={zone.value} value={zone.value}>
+                                                {zone.name}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                ))}
+                            </select>
+                            <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 ${themeConfig.textColor}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 id="start-of-week-label" className={`text-sm font-medium mb-2 ${themeConfig.textColor}`}>Start Week On</h4>
+                        <div role="radiogroup" aria-labelledby="start-of-week-label" className="flex w-full rounded-full border border-white/10 overflow-hidden">
+                            {startOfWeekOptions.map((option, index) => (
+                                <button
+                                    key={option.name}
+                                    onClick={() => handleStartOfWeekChange(option.name)}
+                                    role="radio"
+                                    aria-checked={startOfWeek === option.name}
+                                    className={`flex-1 py-2.5 px-2 text-sm font-medium text-center transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/50 whitespace-nowrap ${
+                                        startOfWeek === option.name ? `bg-accent text-white` : `bg-black/10 ${themeConfig.textColor} hover:bg-black/20`
+                                    } ${index > 0 ? 'border-l border-white/10' : ''}`}
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </ExpandableSection>
 
             <ExpandableSection title="Background">
                  <p className={`text-sm mb-3 ${themeConfig.subtextColor}`}>Adjust the background animation.</p>
@@ -116,26 +167,6 @@ const AppearanceSettingsView: React.FC = () => {
                 <div className="flex justify-between text-xs text-gray-400 mt-1">
                     <span>Slower</span>
                     <span>Faster</span>
-                </div>
-            </ExpandableSection>
-            
-            <ExpandableSection title="Calendar">
-                 <p className={`text-sm mb-3 ${themeConfig.subtextColor}`}>Customize calendar views.</p>
-                 <h4 id="start-of-week-label" className={`text-sm font-medium mb-2 ${themeConfig.textColor}`}>Start Week On</h4>
-                <div role="radiogroup" aria-labelledby="start-of-week-label" className="flex w-full rounded-full border border-white/10 overflow-hidden">
-                    {startOfWeekOptions.map((option, index) => (
-                        <button
-                            key={option.name}
-                            onClick={() => handleStartOfWeekChange(option.name)}
-                            role="radio"
-                            aria-checked={startOfWeek === option.name}
-                            className={`flex-1 py-2.5 px-2 text-sm font-medium text-center transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/50 whitespace-nowrap ${
-                                startOfWeek === option.name ? `bg-accent text-white` : `bg-black/10 ${themeConfig.textColor} hover:bg-black/20`
-                            } ${index > 0 ? 'border-l border-white/10' : ''}`}
-                        >
-                            {option.label}
-                        </button>
-                    ))}
                 </div>
             </ExpandableSection>
             

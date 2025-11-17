@@ -69,7 +69,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({ routines }) => {
     const todayKey = today.toISOString().split('T')[0];
 
     return (
-        <div className="w-full h-full flex flex-col max-w-5xl mx-auto">
+        <div className="w-full flex flex-col max-w-5xl mx-auto">
             <header className="flex-shrink-0 flex items-center justify-between py-2 w-full">
                 <button onClick={handlePrevWeek} aria-label="Previous week" className={`p-2 rounded-full hover:bg-white/10 ${themeConfig.textColor}`}><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
                 <div className="text-center">
@@ -79,20 +79,20 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({ routines }) => {
                 <button onClick={handleNextWeek} aria-label="Next week" className={`p-2 rounded-full hover:bg-white/10 ${themeConfig.textColor}`}><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
             </header>
 
-            <div className="flex-1 flex flex-col w-full overflow-hidden">
+            <div className="flex flex-col w-full">
                 <div className="grid grid-cols-7 gap-2">
                     {dayNames.map(day => (
                         <div key={day} className={`text-center text-sm font-bold pb-2 ${themeConfig.subtextColor}`}>{day}</div>
                     ))}
                 </div>
-                <div className="flex-1 grid grid-cols-7 gap-2 overflow-hidden">
+                <div className="grid grid-cols-7 gap-2">
                     {weekDays.map(day => {
                         const dayKey = day.toISOString().split('T')[0];
                         const items = scheduleByDay.get(dayKey) || [];
                         const isToday = dayKey === todayKey;
 
                         return (
-                            <div key={dayKey} className={`flex flex-col rounded-xl bg-black/10 p-2 overflow-hidden border ${isToday ? 'border-accent' : 'border-transparent'}`}>
+                            <div key={dayKey} className={`flex flex-col rounded-xl bg-black/10 p-2 overflow-hidden border ${isToday ? 'border-accent' : 'border-transparent'} min-h-[12vh]`}>
                                 <div className="flex-shrink-0 text-center mb-2">
                                     <span className={`text-sm font-medium ${isToday ? themeConfig.textColor : themeConfig.subtextColor}`}>{day.getDate()}</span>
                                 </div>

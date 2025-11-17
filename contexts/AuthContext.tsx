@@ -12,22 +12,29 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [currentUser, setCurrentUser] = usePersistentState<Member | null>('currentUser', null);
+    const [currentUserId, setCurrentUserId] = usePersistentState<number | null>('currentUserId', null);
     const { members } = useAppData();
+
+    const currentUser = useMemo(() => {
+        if (currentUserId === null) return null;
+        // The derived state ensures that if the member's data is updated
+        // elsewhere, the currentUser object here will reflect those changes instantly.
+        return members.find(m => m.id === currentUserId) ?? null;
+    }, [currentUserId, members]);
 
     const login = useCallback((name: string, password: string): boolean => {
         const user = members.find(m => m.name === name);
         if (user && user.password === password) {
-            setCurrentUser(user);
+            setCurrentUserId(user.id);
             return true;
         }
-        setCurrentUser(null);
+        setCurrentUserId(null);
         return false;
-    }, [members, setCurrentUser]);
+    }, [members, setCurrentUserId]);
 
     const logout = useCallback(() => {
-        setCurrentUser(null);
-    }, [setCurrentUser]);
+        setCurrentUserId(null);
+    }, [setCurrentUserId]);
 
     const value = useMemo(() => ({
         currentUser,

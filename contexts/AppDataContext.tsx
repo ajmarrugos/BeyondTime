@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import usePersistentState from '../hooks/usePersistentState';
 import { Member, Routine, Team } from '../types';
@@ -14,13 +15,18 @@ interface AppDataContextType {
     
     // Actions
     setRoutines: (routines: Routine[] | ((prev: Routine[]) => Routine[])) => void;
-    addMember: (name: string) => void;
-    updateMember: (id: number, updates: Partial<Pick<Member, 'name' | 'role'>>) => void;
+    addMember: (details: { name: string; phone: string; timezone: string; teamId?: number; }) => void;
+    updateMember: (id: number, updates: Partial<Pick<Member, 'name' | 'role' | 'teamId' | 'phone' | 'timezone'>>) => void;
     addRoutine: (routine: Omit<Routine, 'id'>) => void;
     updateRoutine: (routine: Routine) => void;
     deleteRoutine: (id: number) => void;
     deleteMemberAndRoutines: (id: number) => void;
     
+    // Team Actions
+    addTeam: (name: string) => void;
+    updateTeam: (id: number, updates: Partial<Pick<Team, 'name'>>) => void;
+    deleteTeam: (id: number) => void;
+
     // Data Management
     loadSampleData: (skipConfirmation?: boolean) => void;
     importData: (jsonString: string) => void;
@@ -36,31 +42,46 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const { addToast } = useToast();
 
     // --- Member Actions ---
-    const addMember = useCallback((name: string) => {
-        if (name.trim() === '') return;
+    const addMember = useCallback((details: { name: string; phone: string; timezone: string; teamId?: number; }) => {
+        if (details.name.trim() === '') {
+            addToast('Member name cannot be empty.', 'error');
+            return;
+        }
         const newMember: Member = {
             id: Date.now(),
-            name: name.trim(),
+            name: details.name.trim(),
+            phone: details.phone.trim(),
+            timezone: details.timezone,
+            teamId: details.teamId,
             role: 'Member',
             password: 'password'
         };
         setMembers(prev => [...prev, newMember]);
-    }, [setMembers]);
+        addToast(`Member "${details.name.trim()}" created.`, 'success');
+    }, [setMembers, addToast]);
 
-    const updateMember = useCallback((id: number, updates: Partial<Pick<Member, 'name' | 'role'>>) => {
-        if (updates.name && updates.name.trim() === '') return;
-
+    const updateMember = useCallback((id: number, updates: Partial<Pick<Member, 'name' | 'role' | 'teamId' | 'phone' | 'timezone'>>) => {
         setMembers(prev => prev.map(m => {
             if (m.id === id) {
                 const updatedMember = { ...m, ...updates };
+                // Ensure name is trimmed if provided and not empty
                 if (updates.name) {
-                    updatedMember.name = updates.name.trim();
+                    const trimmedName = updates.name.trim();
+                    if (trimmedName === '') {
+                        addToast('Member name cannot be empty.', 'error');
+                        return m; // Revert to original if name is empty
+                    }
+                    updatedMember.name = trimmedName;
+                }
+                 // Handle teamId being set to undefined (unassigned)
+                if ('teamId' in updates && updates.teamId === undefined) {
+                    delete updatedMember.teamId;
                 }
                 return updatedMember;
             }
             return m;
         }));
-    }, [setMembers]);
+    }, [setMembers, addToast]);
 
     // --- Routine Actions ---
     const addRoutine = useCallback((routine: Omit<Routine, 'id'>) => {
@@ -84,6 +105,33 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setRoutines(prev => prev.filter(r => r.memberId !== memberId));
         addToast('Member and their items have been deleted.', 'success');
     }, [setMembers, setRoutines, addToast]);
+
+    // --- Team Actions ---
+    const addTeam = useCallback((name: string) => {
+        if (name.trim() === '') return;
+        const newTeam: Team = {
+            id: Date.now(),
+            name: name.trim(),
+        };
+        setTeams(prev => [...prev, newTeam]);
+        addToast(`Team "${name.trim()}" created.`, 'success');
+    }, [setTeams, addToast]);
+
+    const updateTeam = useCallback((id: number, updates: Partial<Pick<Team, 'name'>>) => {
+        if (updates.name && updates.name.trim() === '') return;
+        setTeams(prev => prev.map(t => t.id === id ? { ...t, name: updates.name!.trim() } : t));
+        addToast(`Team updated.`, 'success');
+    }, [setTeams, addToast]);
+    
+    const deleteTeam = useCallback((id: number) => {
+        const teamName = teams.find(t => t.id === id)?.name;
+        // First, unassign all members from this team
+        setMembers(prev => prev.map(m => m.teamId === id ? { ...m, teamId: undefined } : m));
+        // Then, delete the team
+        setTeams(prev => prev.filter(t => t.id !== id));
+        if(teamName) addToast(`Team "${teamName}" and its member assignments have been removed.`, 'success');
+    }, [setTeams, setMembers, teams, addToast]);
+
 
     // --- Data Management ---
     const loadSampleData = useCallback((skipConfirmation = false) => {
@@ -123,7 +171,12 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const dataToExport: { [key: string]: any } = {};
         if (selection.teams) dataToExport.teams = teams;
         if (selection.members) dataToExport.members = members;
-        if (selection.routines) dataToExport.routines = routines;
+        // Filter routines/events based on selection
+        const routinesToExport = routines.filter(r => 
+            (selection.routines && (r.tags.includes('Routine') || r.tags.includes('Task') || r.tags.includes('Payment'))) ||
+            (selection.events && r.tags.includes('Event'))
+        );
+        dataToExport.routines = routinesToExport;
 
         const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(dataToExport, null, 2))}`;
         const link = document.createElement("a");
@@ -136,8 +189,14 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const value = useMemo(() => ({
         members, routines, teams,
         setRoutines, addMember, updateMember, addRoutine, updateRoutine, deleteRoutine, deleteMemberAndRoutines,
-        loadSampleData, importData, exportData
-    }), [members, routines, teams, setRoutines, addMember, updateMember, addRoutine, updateRoutine, deleteRoutine, deleteMemberAndRoutines, loadSampleData, importData, exportData]);
+        loadSampleData, importData, exportData,
+        addTeam, updateTeam, deleteTeam
+    }), [
+        members, routines, teams, 
+        setRoutines, addMember, updateMember, addRoutine, updateRoutine, deleteRoutine, deleteMemberAndRoutines, 
+        loadSampleData, importData, exportData,
+        addTeam, updateTeam, deleteTeam
+    ]);
 
     return (
         <AppDataContext.Provider value={value}>

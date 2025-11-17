@@ -15,7 +15,7 @@ const InfoItem: React.FC<{ label: string; children: React.ReactNode }> = ({ labe
 const AboutView: React.FC = () => {
     const { themeConfig } = useTheme();
     
-    const appVersion = '2.0.0';
+    const appVersion = '2.5.0';
     const developerName = '@ajmarrugos';
     const developerLink = 'https://github.com/ajmarrugos';
     const projectName = 'BeyondTime';
@@ -39,6 +39,11 @@ const AboutView: React.FC = () => {
                 <InfoItem label="Project code">
                     <a href={githubLink} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
                         {projectName}
+                    </a>
+                </InfoItem>
+                <InfoItem label="Report an Issue">
+                    <a href={`${githubLink}/issues`} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                        GitHub Issues
                     </a>
                 </InfoItem>
                 <InfoItem label="Support contact">

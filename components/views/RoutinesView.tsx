@@ -1,7 +1,5 @@
 
 
-
-
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Routine } from '../../types';
@@ -17,6 +15,7 @@ import { useVirtualization } from '../../hooks/useVirtualization';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../contexts/ToastContext';
 import ViewSwitcher from '../ui/ViewSwitcher';
+import { vibrate } from '../../utils/haptics';
 
 interface RoutinesViewProps {
     routines: Routine[];
@@ -288,6 +287,7 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
         const element = routineCardRefs.current.get(id);
         if (!routine || !element) return;
         e.stopPropagation();
+        vibrate(50);
         const rect = element.getBoundingClientRect();
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
         const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;

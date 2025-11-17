@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -12,6 +10,7 @@ import { useModal } from '../../contexts/ModalContext';
 import { timezones } from '../../config/timezones';
 import Flag from '../ui/Flag';
 import { timezoneToCountry } from '../../utils/timezoneToCountry';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 const getDefaultTimezone = () => {
     try {
@@ -21,13 +20,20 @@ const getDefaultTimezone = () => {
     }
 };
 
-const MemberManagementView: React.FC = () => {
+interface TeamManagementModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+
+const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen, onClose }) => {
     const { themeConfig } = useTheme();
     const { members, teams, addMember, updateMember, deleteMemberAndRoutines, addTeam, updateTeam, deleteTeam } = useAppData();
     const { getManageableMembers } = usePermissions();
     const { currentUser } = useAuth();
     const { addToast } = useToast();
     const { confirm } = useModal();
+    const modalRef = useFocusTrap(isOpen);
     
     const manageableMembers = getManageableMembers();
     const [newMemberName, setNewMemberName] = useState('');
@@ -122,8 +128,6 @@ const MemberManagementView: React.FC = () => {
         if (currentUser?.id === member.id || member.role === newRole) return;
         setPendingRoleChanges(prev => ({ ...prev, [member.id]: true }));
         updateMember(member.id, { role: newRole });
-        // The rest of this logic for async validation has been removed for simplicity
-        // as it relied on a local webhook.
         addToast(`Role for ${member.name} updated to ${newRole}.`, 'success');
         setPendingRoleChanges(prev => {
             const newState = { ...prev };
@@ -196,77 +200,96 @@ const MemberManagementView: React.FC = () => {
     };
 
     return (
-        <div className="overflow-y-auto h-full space-y-4">
-            <div className={`p-4 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/5 space-y-4`}>
-                {canManageTeams && (
-                    <div>
-                        <h3 className={`text-lg font-semibold mb-2 ${themeConfig.textColor}`}>Create New Team</h3>
-                        <div className="flex space-x-2">
-                            <input type="text" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddTeamClick()} placeholder="New team name..." className={`${inputBase} flex-grow min-w-0`} />
-                            <button onClick={handleAddTeamClick} disabled={!newTeamName} className={`flex-shrink-0 px-4 rounded-xl font-semibold ${themeConfig.textColor} bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}>Create</button>
-                        </div>
-                    </div>
-                )}
-                <div>
-                    <h3 className={`text-lg font-semibold mb-2 ${themeConfig.textColor}`}>Add New Member</h3>
-                     <div className="space-y-2">
-                        <input type="text" value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} placeholder="New member name..." className={`${inputBase} w-full`} />
-                        <div className="relative">
-                            <select value={newMemberTeamId ?? 'unassigned'} onChange={(e) => setNewMemberTeamId(e.target.value === 'unassigned' ? undefined : Number(e.target.value))} className={`${inputBase} w-full appearance-none pr-8`}>
-                                <option value="unassigned">Unassigned</option>
-                                {teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
-                            </select>
-                            <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${themeConfig.textColor}`}><svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg></div>
-                        </div>
-                        <div className="flex space-x-2">
-                            <input type="tel" value={newMemberPhone} onChange={(e) => setNewMemberPhone(e.target.value)} placeholder="Phone (optional)" className={`${inputBase} flex-grow`} />
-                            <div className="relative flex-grow">
-                                <select value={newMemberTimezone} onChange={(e) => setNewMemberTimezone(e.target.value)} className={`${inputBase} w-full appearance-none pr-8`}>
-                                    {timezones.map(group => (<optgroup key={group.group} label={group.group}>{group.zones.map(zone => (<option key={zone.value} value={zone.value}>{zone.name}</option>))}</optgroup>))}
-                                </select>
-                                <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${themeConfig.textColor}`}><svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg></div>
+        <div 
+            className={`fixed inset-0 z-50 flex items-center justify-center p-0 md:p-6 transition-opacity duration-300 ease-in-out bg-black/40 backdrop-blur-sm ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} 
+            aria-modal="true" role="dialog"
+        >
+            <div 
+                ref={modalRef as React.RefObject<HTMLDivElement>} 
+                className={`flex flex-col w-full h-full overflow-hidden ${themeConfig.background} md:max-w-xl lg:max-w-2xl md:h-auto md:max-h-[90vh] md:rounded-3xl md:shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? 'scale-100' : 'scale-95'}`}
+            >
+                <header className="flex-shrink-0 flex items-center justify-between p-4 border-b border-white/10">
+                    <h2 className={`text-xl font-bold ${themeConfig.textColor} ml-4`}>Team & Member Management</h2>
+                    <button onClick={onClose} aria-label="Close" className={`p-2 rounded-full hover:bg-white/10 transition-colors ${themeConfig.textColor}`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </header>
+                <div className="overflow-y-auto h-full p-6 space-y-4">
+                    <div className={`p-4 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/5 space-y-4`}>
+                        {canManageTeams && (
+                            <div>
+                                <h3 className={`text-lg font-semibold mb-2 ${themeConfig.textColor}`}>Create New Team</h3>
+                                <div className="flex space-x-2">
+                                    <input type="text" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddTeamClick()} placeholder="New team name..." className={`${inputBase} flex-grow min-w-0`} />
+                                    <button onClick={handleAddTeamClick} disabled={!newTeamName} className={`flex-shrink-0 px-4 rounded-xl font-semibold ${themeConfig.textColor} bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}>Create</button>
+                                </div>
+                            </div>
+                        )}
+                        <div>
+                            <h3 className={`text-lg font-semibold mb-2 ${themeConfig.textColor}`}>Add New Member</h3>
+                            <div className="space-y-2">
+                                <input type="text" value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} placeholder="New member name..." className={`${inputBase} w-full`} />
+                                <div className="relative">
+                                    <select value={newMemberTeamId ?? 'unassigned'} onChange={(e) => setNewMemberTeamId(e.target.value === 'unassigned' ? undefined : Number(e.target.value))} className={`${inputBase} w-full appearance-none pr-8`}>
+                                        <option value="unassigned">Unassigned</option>
+                                        {teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+                                    </select>
+                                    <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${themeConfig.textColor}`}><svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg></div>
+                                </div>
+                                <div className="flex space-x-2">
+                                    <input type="tel" value={newMemberPhone} onChange={(e) => setNewMemberPhone(e.target.value)} placeholder="Phone (optional)" className={`${inputBase} flex-grow`} />
+                                    <div className="relative flex-grow">
+                                        <select value={newMemberTimezone} onChange={(e) => setNewMemberTimezone(e.target.value)} className={`${inputBase} w-full appearance-none pr-8`}>
+                                            {timezones.map(group => (<optgroup key={group.group} label={group.group}>{group.zones.map(zone => (<option key={zone.value} value={zone.value}>{zone.name}</option>))}</optgroup>))}
+                                        </select>
+                                        <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${themeConfig.textColor}`}><svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg></div>
+                                    </div>
+                                </div>
+                                <button onClick={handleAddMemberClick} disabled={!newMemberName} className={`w-full px-4 py-3 rounded-xl font-semibold ${themeConfig.textColor} bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}>Add Member</button>
                             </div>
                         </div>
-                        <button onClick={handleAddMemberClick} disabled={!newMemberName} className={`w-full px-4 py-3 rounded-xl font-semibold ${themeConfig.textColor} bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}>Add Member</button>
                     </div>
+
+                    {canManageTeams && teams.map(team => (
+                        <ExpandableSection key={team.id} title={editingTeam?.id === team.id ? '' : `${team.name} (${membersByTeam[team.id]?.length || 0})`} defaultOpen={true}
+                            headerContent={
+                                editingTeam?.id === team.id ? (
+                                    <div className="flex-grow flex items-center space-x-2">
+                                        <input type="text" value={editingTeam.name} onChange={(e) => setEditingTeam({...editingTeam, name: e.target.value})} className={`flex-grow bg-transparent focus:outline-none ${themeConfig.textColor} p-1 rounded-md ring-1 ring-accent`} autoFocus onKeyDown={(e) => e.key === 'Enter' && handleUpdateTeamClick()} />
+                                        <button onClick={handleUpdateTeamClick} className={`p-1 rounded-full hover:bg-white/5 ${themeConfig.textColor}`} aria-label="Save changes"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" /></svg></button>
+                                        <button onClick={() => setEditingTeam(null)} className={`p-1 rounded-full hover:bg-white/5 ${themeConfig.textColor}`} aria-label="Cancel edit"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" /></svg></button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center">
+                                        <button onClick={() => setEditingTeam(team)} className={`p-1.5 rounded-full hover:bg-white/5 ${themeConfig.textColor}`} aria-label={`Edit ${team.name} team name`}><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" /></svg></button>
+                                        <button onClick={() => handleDeleteTeamClick(team)} className={`p-1.5 rounded-full hover:bg-white/5 ${themeConfig.textColor}`} aria-label={`Delete ${team.name} team`}><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                                    </div>
+                                )
+                            }
+                        >
+                            <ul className="space-y-1">
+                                {(membersByTeam[team.id] && membersByTeam[team.id].length > 0) ? 
+                                    membersByTeam[team.id].map(member => <MemberRow key={member.id} member={member} />) : 
+                                    <li><p className={`text-sm text-center py-2 ${themeConfig.subtextColor}`}>No manageable members in this team.</p></li>}
+                            </ul>
+                        </ExpandableSection>
+                    ))}
+                    
+                    <ExpandableSection title={`Unassigned Members (${unassignedMembers.length})`} defaultOpen={unassignedMembers.length > 0}>
+                        <ul className="space-y-1">
+                            {unassignedMembers.length > 0 ? 
+                                unassignedMembers.map(member => <MemberRow key={member.id} member={member} />) :
+                                <li><p className={`text-sm text-center py-2 ${themeConfig.subtextColor}`}>All manageable members are in a team.</p></li>
+                            }
+                        </ul>
+                    </ExpandableSection>
                 </div>
             </div>
-
-            {canManageTeams && teams.map(team => (
-                 <ExpandableSection key={team.id} title={editingTeam?.id === team.id ? '' : team.name} defaultOpen={true}
-                    headerContent={
-                        editingTeam?.id === team.id ? (
-                            <div className="flex-grow flex items-center space-x-2">
-                                <input type="text" value={editingTeam.name} onChange={(e) => setEditingTeam({...editingTeam, name: e.target.value})} className={`flex-grow bg-transparent focus:outline-none ${themeConfig.textColor} p-1 rounded-md ring-1 ring-accent`} autoFocus onKeyDown={(e) => e.key === 'Enter' && handleUpdateTeamClick()} />
-                                <button onClick={handleUpdateTeamClick} className={`p-1 rounded-full hover:bg-white/5 ${themeConfig.textColor}`} aria-label="Save changes"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" /></svg></button>
-                                <button onClick={() => setEditingTeam(null)} className={`p-1 rounded-full hover:bg-white/5 ${themeConfig.textColor}`} aria-label="Cancel edit"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" /></svg></button>
-                            </div>
-                        ) : (
-                            <div className="flex items-center">
-                                <button onClick={() => setEditingTeam(team)} className={`p-1.5 rounded-full hover:bg-white/5 ${themeConfig.textColor}`} aria-label={`Edit ${team.name} team name`}><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" /></svg></button>
-                                <button onClick={() => handleDeleteTeamClick(team)} className={`p-1.5 rounded-full hover:bg-white/5 ${themeConfig.textColor}`} aria-label={`Delete ${team.name} team`}><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
-                            </div>
-                        )
-                    }
-                 >
-                    <ul className="space-y-1">
-                        {(membersByTeam[team.id] && membersByTeam[team.id].length > 0) ? 
-                            membersByTeam[team.id].map(member => <MemberRow key={member.id} member={member} />) : 
-                            <li><p className={`text-sm text-center py-2 ${themeConfig.subtextColor}`}>No manageable members in this team.</p></li>}
-                    </ul>
-                </ExpandableSection>
-            ))}
-            
-            <ExpandableSection title="Unassigned Members" defaultOpen={unassignedMembers.length > 0}>
-                 <ul className="space-y-1">
-                    {unassignedMembers.length > 0 ? 
-                        unassignedMembers.map(member => <MemberRow key={member.id} member={member} />) :
-                        <li><p className={`text-sm text-center py-2 ${themeConfig.subtextColor}`}>All manageable members are in a team.</p></li>
-                    }
-                </ul>
-            </ExpandableSection>
         </div>
     );
 };
 
-export default React.memo(MemberManagementView);
+export default TeamManagementModal;

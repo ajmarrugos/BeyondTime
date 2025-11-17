@@ -6,6 +6,7 @@ import { usePermissions } from '../hooks/usePermissions';
 import { useCurrentTime } from '../hooks/useCurrentTime';
 import { Routine } from '../types';
 import { formatRepetition } from '../utils/formatters';
+import { vibrate } from '../utils/haptics';
 
 interface RoutineCardActions {
     delete: (id: number) => void;
@@ -42,7 +43,7 @@ const RoutineCard = React.memo(React.forwardRef<HTMLDivElement, RoutineCardProps
     isExpanded,
     onToggleExpand,
 }, ref) => {
-    const { themeConfig, accentColor } = useTheme();
+    const { themeConfig, timezone } = useTheme();
     const { members } = useAppData();
     const { canEditRoutine, canDeleteRoutine } = usePermissions();
     const currentTime = useCurrentTime();
@@ -53,18 +54,22 @@ const RoutineCard = React.memo(React.forwardRef<HTMLDivElement, RoutineCardProps
 
     const isLive = useMemo(() => {
         if (!routine.autoLive || isTaskOrPayment) return false;
-        const now = currentTime;
+        
+        const timeInTimezone = new Date(currentTime.toLocaleString('en-US', { timeZone: timezone }));
+        const nowInMinutes = timeInTimezone.getHours() * 60 + timeInTimezone.getMinutes();
+
         const [startHour, startMinute] = routine.startTime.split(':').map(Number);
-        const startTime = new Date(now);
-        startTime.setHours(startHour, startMinute, 0, 0);
+        const startTimeInMinutes = startHour * 60 + startMinute;
+
         const [endHour, endMinute] = routine.endTime.split(':').map(Number);
-        const endTime = new Date(now);
-        endTime.setHours(endHour, endMinute, 0, 0);
-        if (endTime.getTime() <= startTime.getTime()) {
-          return now.getTime() >= startTime.getTime() || now.getTime() < endTime.getTime();
+        const endTimeInMinutes = endHour * 60 + endMinute;
+
+        if (endTimeInMinutes <= startTimeInMinutes) { // Overnight
+          return nowInMinutes >= startTimeInMinutes || nowInMinutes < endTimeInMinutes;
         }
-        return now.getTime() >= startTime.getTime() && now.getTime() < endTime.getTime();
-    }, [currentTime, routine, isTaskOrPayment]);
+        
+        return nowInMinutes >= startTimeInMinutes && nowInMinutes < endTimeInMinutes;
+    }, [currentTime, routine, isTaskOrPayment, timezone]);
 
     const isCompleted = useMemo(() => {
         if (isTaskOrPayment) {
@@ -86,6 +91,11 @@ const RoutineCard = React.memo(React.forwardRef<HTMLDivElement, RoutineCardProps
     
     const handleAnimationEnd = () => {
         if (isDeleting) onDeleteAnimationEnd(routine.id);
+    };
+
+    const handleToggleTask = (taskId: number) => {
+        onToggleTask(taskId);
+        vibrate();
     };
 
     const glowStyle: React.CSSProperties = isLive && !isCompleted ? { 
@@ -145,7 +155,7 @@ const RoutineCard = React.memo(React.forwardRef<HTMLDivElement, RoutineCardProps
                                     </div>
                                 )}
                                 <button
-                                    onClick={() => onToggleTask(0)}
+                                    onClick={() => handleToggleTask(0)}
                                     className={`w-full py-3 rounded-xl font-semibold transition-colors duration-200 flex items-center justify-center space-x-2 ${isCompleted ? `bg-white/10 ${themeConfig.textColor}` : `bg-accent text-white`}`}
                                 >
                                     {isCompleted ? (
@@ -170,7 +180,7 @@ const RoutineCard = React.memo(React.forwardRef<HTMLDivElement, RoutineCardProps
                                             const isTaskCompleted = completedTaskIds.has(task.id);
                                             return (
                                                 <li key={task.id} className="flex items-center space-x-3">
-                                                    <button onClick={() => onToggleTask(task.id)} className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-200 ${isTaskCompleted ? 'border-transparent' : 'border-white/30'}`} style={{ backgroundColor: isTaskCompleted ? routine.color : 'transparent' }} aria-label={`Mark task ${task.text} as ${isTaskCompleted ? 'incomplete' : 'complete'}`}>
+                                                    <button onClick={() => handleToggleTask(task.id)} className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-200 ${isTaskCompleted ? 'border-transparent' : 'border-white/30'}`} style={{ backgroundColor: isTaskCompleted ? routine.color : 'transparent' }} aria-label={`Mark task ${task.text} as ${isTaskCompleted ? 'incomplete' : 'complete'}`}>
                                                         {isTaskCompleted && <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                                                     </button>
                                                     <span className={`flex-grow transition-opacity ${isTaskCompleted ? 'line-through opacity-50' : ''}`}>{task.text}</span>

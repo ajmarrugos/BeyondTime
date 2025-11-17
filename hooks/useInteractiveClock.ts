@@ -1,6 +1,7 @@
 import React from 'react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { CLOCK_RETURN_ANIMATION_MS } from '../config/constants';
+import { vibrate } from '../utils/haptics';
 
 const LONG_PRESS_DURATION_MS = 400;
 
@@ -120,6 +121,7 @@ export const useClockInteraction = (
     const handleInteractionStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         
+        vibrate(20);
         setInteractionState('pressing');
 
         longPressTimeoutRef.current = window.setTimeout(() => {

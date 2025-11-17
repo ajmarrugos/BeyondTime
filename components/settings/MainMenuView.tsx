@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../hooks/usePermissions';
 
 interface MainMenuViewProps {
-    setMenuView: (view: 'main' | 'settings' | 'members' | 'integrations' | 'permissions' | 'notifications' | 'about') => void;
+    setMenuView: (view: 'main' | 'settings' | 'integrations' | 'permissions' | 'notifications' | 'about') => void;
 }
 
 const MenuItem: React.FC<{ onClick: () => void, children: React.ReactNode, icon: React.ReactNode }> = ({ onClick, children, icon }) => {
@@ -22,19 +22,11 @@ const MenuItem: React.FC<{ onClick: () => void, children: React.ReactNode, icon:
 
 const MainMenuView: React.FC<MainMenuViewProps> = ({ setMenuView }) => {
     const { logout } = useAuth();
-    const { canManageMembers, canViewIntegrations, canManagePermissions } = usePermissions();
+    const { canViewIntegrations, canManagePermissions } = usePermissions();
 
     return (
         <div className="flex flex-col h-full">
             <ul role="menu" className="space-y-2 flex-grow">
-                {canManageMembers() && (
-                    <MenuItem 
-                        onClick={() => setMenuView('members')}
-                        icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.124-1.282-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.124-1.282.356-1.857m0 0a3.002 3.002 0 014.288 0M12 12a3 3 0 100-6 3 3 0 000 6z" /></svg>}
-                    >
-                        Manage Members
-                    </MenuItem>
-                )}
                 <MenuItem 
                     onClick={() => setMenuView('settings')}
                     icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { vibrate } from '../utils/haptics';
 
 export const useClockTimer = () => {
     const [isTimerActive, setIsTimerActive] = useState(false);
@@ -44,6 +45,7 @@ export const useClockTimer = () => {
         setDuration(durationInSeconds);
         setTimeRemaining(durationInSeconds);
         setIsTimerActive(true);
+        vibrate([50, 100, 50]);
     }, []);
 
     const cancelTimer = useCallback(() => {

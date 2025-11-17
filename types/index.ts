@@ -12,6 +12,8 @@ export interface Member {
   teamId?: number;
   role: Role;
   password?: string; // Should be handled securely in a real app
+  phone?: string;
+  timezone?: string;
 }
 
 // Fix: Extracted Task into its own interface to make it reusable and exportable.

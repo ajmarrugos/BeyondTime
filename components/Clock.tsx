@@ -1,4 +1,6 @@
 
+
+
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useTheme, ClockLayout, ClockEffects } from '../contexts/ThemeContext';
 import { Routine } from '../types';
@@ -18,6 +20,8 @@ interface ClockProps {
     timeRemaining: number;
     timerDuration: number;
     timerDraftAngle: number;
+    // FIX: Add isDimmed prop to allow dimming of the clock face.
+    isDimmed?: boolean;
 }
 
 const handBaseStyle: React.CSSProperties = {
@@ -70,9 +74,10 @@ const Clock: React.FC<ClockProps> = ({
     isSettingTimer,
     timeRemaining,
     timerDuration,
-    timerDraftAngle
+    timerDraftAngle,
+    isDimmed = false,
 }) => {
-    const { themeConfig, accentColor } = useTheme();
+    const { themeConfig, accentColor, timezone } = useTheme();
     const { isDesktop } = useDevice();
     const { tilt } = useDeviceMotion();
 
@@ -208,10 +213,32 @@ const Clock: React.FC<ClockProps> = ({
 
     }, [clockRef, effects.parallax, effects.glint, isDesktop, tilt]);
 
-    const milliseconds = time.getMilliseconds();
-    const seconds = effects.sweepingSecondHand ? (time.getSeconds() + milliseconds / 1000) : time.getSeconds();
-    const minutes = effects.sweepingSecondHand ? (time.getMinutes() + seconds / 60) : time.getMinutes();
-    const hours = time.getHours() + minutes / 60;
+    const { hours, minutes, seconds } = useMemo(() => {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+            hour12: false,
+        });
+
+        const parts = formatter.formatToParts(time);
+        const getPart = (type: string) => parseInt(parts.find(p => p.type === type)?.value || '0', 10);
+        
+        const h = getPart('hour');
+        const m = getPart('minute');
+        const s = getPart('second');
+        const ms = time.getMilliseconds();
+
+        const sweepingSeconds = effects.sweepingSecondHand ? (s + ms / 1000) : s;
+        const sweepingMinutes = effects.sweepingSecondHand ? (m + sweepingSeconds / 60) : m;
+
+        return {
+            hours: h + sweepingMinutes / 60,
+            minutes: sweepingMinutes,
+            seconds: sweepingSeconds,
+        };
+    }, [time, timezone, effects.sweepingSecondHand]);
 
     const hourRotation = (hours % 12) * 30;
     const minuteRotation = minutes * 6;
@@ -267,7 +294,7 @@ const Clock: React.FC<ClockProps> = ({
     return (
         <div 
             ref={clockRef}
-            className={`relative aspect-square w-[60vh] max-w-[21rem] md:max-w-[26rem] rounded-full flex items-center justify-center cursor-pointer touch-none select-none overflow-hidden`}
+            className={`relative aspect-square w-[85vw] max-w-[21rem] md:w-[70vw] md:max-w-[26rem] lg:w-[60vh] lg:max-w-[32rem] rounded-full flex items-center justify-center cursor-pointer touch-none select-none overflow-hidden transition-opacity duration-300 ${isDimmed ? 'opacity-50' : ''}`}
             style={clockContainerStyle}
             onMouseDown={onInteractionStart}
             onTouchStart={onInteractionStart}
