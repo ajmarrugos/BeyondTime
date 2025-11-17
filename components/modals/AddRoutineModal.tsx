@@ -14,9 +14,9 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../contexts/ToastContext';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
-import { useAppData } from '../../contexts/AppDataContext';
 import { useModal } from '../../contexts/ModalContext';
 import { vibrate } from '../../utils/haptics';
+import { useRoutines } from '../../contexts/RoutinesContext';
 
 interface AddRoutineModalProps {
     isOpen: boolean;
@@ -95,7 +95,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
 const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ isOpen, onExited, ...props }) => {
     const { themeConfig } = useTheme();
     const { getAssignableMembers } = usePermissions();
-    const { addRoutine, updateRoutine } = useAppData();
+    const { addRoutine, updateRoutine } = useRoutines();
     const { editingRoutine, preselectedMemberId } = useModal();
     const { addToast } = useToast();
     const availableMembers = getAssignableMembers();
@@ -144,11 +144,11 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ isOpen, onExited, ...
             if (!state.name.trim()) newErrors.name = `${itemType} name is required.`;
             if (!state.memberId) newErrors.memberId = 'A member must be selected.';
             
-            const startTimeMinutes = parseInt(state.startTime.split(':')[0]) * 60 + parseInt(state.startTime.split(':')[1]);
-            const endTimeMinutes = parseInt(state.endTime.split(':')[0]) * 60 + parseInt(state.endTime.split(':')[1]);
             if (itemType === 'Routine' || itemType === 'Event') {
+                const startTimeMinutes = parseInt(state.startTime.split(':')[0]) * 60 + parseInt(state.startTime.split(':')[1]);
+                const endTimeMinutes = parseInt(state.endTime.split(':')[0]) * 60 + parseInt(state.endTime.split(':')[1]);
                  if (endTimeMinutes <= startTimeMinutes) {
-                    newErrors.endTime = 'End time must be after start time.';
+                    newErrors.endTime = 'End time must be after start time for overnight routines.';
                 }
             }
 

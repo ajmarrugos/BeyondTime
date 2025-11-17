@@ -1,7 +1,6 @@
+
 import { useAuth } from '../contexts/AuthContext';
-import { useAppData } from '../contexts/AppDataContext';
 import { usePermissionsContext } from '../contexts/PermissionsContext';
-// Fix: Import PermissionName to correctly type the 'can' function parameter.
 import { Routine, PermissionName } from '../types';
 import { useMemo, useCallback } from 'react';
 import {
@@ -11,17 +10,19 @@ import {
     canManageRoutineSelector,
     getAssignableMembersSelector
 } from '../utils/permissions';
+import { useMembers } from '../contexts/MembersContext';
+import { useRoutines } from '../contexts/RoutinesContext';
 
 export const usePermissions = () => {
     const { currentUser } = useAuth();
-    const { members, routines } = useAppData();
+    const { members } = useMembers();
+    const { routines } = useRoutines();
     const { permissions } = usePermissionsContext();
 
     const userPermissions = useMemo(() => {
         return currentUser ? permissions[currentUser.role] || {} : {};
     }, [currentUser, permissions]);
 
-    // Fix: Use the specific 'PermissionName' type for the permission parameter to ensure type safety.
     const can = useCallback((permission: PermissionName): boolean => {
         return canSelector(userPermissions, permission);
     }, [userPermissions]);
@@ -51,6 +52,7 @@ export const usePermissions = () => {
         canViewIntegrations: () => can('viewIntegrations'),
         canManagePermissions: () => can('managePermissions'),
         canManageMembers: () => can('manageMembers'),
+        canManageTeams: () => can('manageTeams'),
 
         getVisibleRoutines,
         getManageableMembers,

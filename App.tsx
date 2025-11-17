@@ -1,3 +1,4 @@
+
 import React, { useCallback, useRef, useEffect, memo, useState, useMemo } from 'react';
 
 // Hooks
@@ -10,7 +11,7 @@ import { useSettingsPanel } from './contexts/SettingsPanelContext';
 import { useDragState } from './contexts/DragStateContext';
 import usePersistentState from './hooks/usePersistentState';
 import { useCurrentTime } from './hooks/useCurrentTime';
-import { useAppData } from './contexts/AppDataContext';
+import { useRoutines } from './contexts/RoutinesContext';
 
 
 // Components
@@ -51,7 +52,7 @@ const MemoTasksView = memo(TasksView);
 const App: React.FC = () => {
   const { themeConfig, handleThemeChange, currentTheme, timezone } = useTheme();
   const { currentUser } = useAuth();
-  const { getVisibleRoutines, canViewSettingsPanel } = usePermissions();
+  const { canViewSettingsPanel } = usePermissions();
   const {
     isRoutineModalMounted, isRoutineModalOpen, closeRoutineModal, handleRoutineModalExited,
     isConfirmModalOpen, confirmModalProps, handleConfirm, handleCancelConfirm,
@@ -62,10 +63,10 @@ const App: React.FC = () => {
   } = useModal();
   const { isSettingsOpen, openSettings, closeSettings } = useSettingsPanel();
   const { isDraggingRoutine } = useDragState();
-  const { routines, members, teams } = useAppData();
+  const { routines } = useRoutines();
  
-  // View state and scroll handling
-  const [currentView, setCurrentView] = useState(1); // 0:Routines, 1:Clock, 2:Tasks
+  // View state is managed in-memory to avoid security errors in sandboxed environments
+  const [currentView, navigate] = useState(1); // Default to clock view (index 1)
   const [clockViewKey, setClockViewKey] = useState(0);
   const appRef = useRef<HTMLElement>(null);
   const lastScrollTime = useRef(0);
@@ -73,39 +74,22 @@ const App: React.FC = () => {
   const device = useDevice();
   const viewCount = 3;
   
-  // --- Data Filtering Logic ---
-
-  // For list views (Routines, Tasks), get routines based on user permissions
-  const visibleRoutines = getVisibleRoutines();
-
   // For the Clock view (Today, Week, Month), ONLY get routines for the current user
   const clockViewRoutines = useMemo(() => {
     if (!currentUser) return [];
     return routines.filter(r => r.memberId === currentUser.id);
   }, [routines, currentUser]);
-  
-  // Routines & Events for the list view (permission-based)
-  const routinesAndEventsForListView = useMemo(() => 
-      visibleRoutines.filter(r => r.tags.includes('Routine') || r.tags.includes('Event')), 
-      [visibleRoutines]
-  );
 
   // Routines & Events for the clock view (current user only)
   const routinesAndEventsForClockView = useMemo(() =>
       clockViewRoutines.filter(r => r.tags.includes('Routine') || r.tags.includes('Event')),
       [clockViewRoutines]
   );
-  
-  // Tasks & Payments for the list view (permission-based)
-  const tasksAndPayments = useMemo(() => 
-      visibleRoutines.filter(r => r.tags.includes('Task') || r.tags.includes('Payment')),
-      [visibleRoutines]
-  );
 
   // Clock glow effect state
   const [showClockGlow, setShowClockGlow] = useState(false);
 
-  // State for completed tasks, lifted from RoutinesView to be shared
+  // State for completed tasks, this could be moved to a context if needed elsewhere
   const [completedTasks, setCompletedTasks] = usePersistentState<Record<number, number[]>>('completedTasks', {});
   
   // Sleep Mode State
@@ -113,7 +97,7 @@ const App: React.FC = () => {
   const originalThemeRef = useRef<ThemeName | null>(null);
   const currentTime = useCurrentTime();
 
-  const anyModalOpen = isSettingsOpen || isRoutineModalOpen || isAddMemberModalOpen || isEditMemberModalOpen || isTeamSettingsModalOpen;
+  const anyModalOpen = isSettingsOpen || isRoutineModalOpen || isAddMemberModalOpen || isEditMemberModalOpen || isTeamSettingsModalOpen || isRoutineDetailModalOpen || isConfirmModalOpen;
 
   const handleToggleTask = useCallback((routineId: number, taskId: number) => {
     setCompletedTasks(prev => {
@@ -136,15 +120,11 @@ const App: React.FC = () => {
     });
   }, [setCompletedTasks]);
 
-  const handleSetView = useCallback((viewIndex: number) => {
-    setCurrentView(viewIndex);
-  }, []);
-
   const handleLogoClick = useCallback(() => {
-    handleSetView(1); // Switch to the clock view.
+    navigate(1); // Switch to the clock view.
     setClockViewKey(k => k + 1); // Force remount to reset its internal state (e.g. from 'weekly' back to 'clock').
     setShowClockGlow(true);
-  }, [handleSetView]);
+  }, [navigate]);
 
   const handleItemClick = useCallback((routine: Routine) => {
     openRoutineDetailModal(routine);
@@ -216,12 +196,12 @@ const App: React.FC = () => {
 
       if (e.deltaY > 0) { // Scrolling down
         if (currentView < viewCount - 1) {
-          handleSetView(currentView + 1);
+          navigate(currentView + 1);
           lastScrollTime.current = now;
         }
       } else { // Scrolling up
         if (currentView > 0) {
-          handleSetView(currentView - 1);
+          navigate(currentView - 1);
           lastScrollTime.current = now;
         }
       }
@@ -238,7 +218,7 @@ const App: React.FC = () => {
             mainElement.removeEventListener('wheel', handleWheel);
         }
     };
-  }, [currentView, device.isDesktop, handleSetView, viewCount, anyModalOpen]);
+  }, [currentView, device.isDesktop, navigate, viewCount, anyModalOpen]);
 
   // Effect to prevent body scroll when modals are open
   useEffect(() => {
@@ -310,12 +290,11 @@ const App: React.FC = () => {
             <SwipeableLayout
                 currentView={currentView}
                 viewCount={viewCount}
-                onViewChange={handleSetView}
+                onViewChange={navigate}
                 isInteractionDisabled={anyModalOpen}
             >
                 <section className="w-full h-full flex-shrink-0">
                   <MemoRoutinesView 
-                    routines={routinesAndEventsForListView}
                     completedTasks={completedTasks}
                     onToggleTask={handleToggleTask}
                   />
@@ -326,14 +305,10 @@ const App: React.FC = () => {
                         showGlow={showClockGlow} 
                         routines={routinesAndEventsForClockView}
                         onItemClick={handleItemClick}
-                        allRoutines={routines}
-                        members={members}
-                        teams={teams}
                     />
                 </section>
                 <section className="w-full h-full flex-shrink-0">
                   <MemoTasksView
-                    routines={tasksAndPayments}
                     completedTasks={completedTasks}
                     onToggleTask={handleToggleTask}
                   />
@@ -345,7 +320,7 @@ const App: React.FC = () => {
               <ViewIndicator 
                 viewCount={viewCount} 
                 currentView={currentView} 
-                onIndicatorClick={handleSetView} 
+                onIndicatorClick={navigate} 
               />
             </footer>
           </div>

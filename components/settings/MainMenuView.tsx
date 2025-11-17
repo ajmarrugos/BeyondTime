@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../hooks/usePermissions';
 
 interface MainMenuViewProps {
-    setMenuView: (view: 'main' | 'settings' | 'integrations' | 'permissions' | 'notifications' | 'about') => void;
+    setMenuView: (view: 'main' | 'account' | 'settings' | 'integrations' | 'permissions' | 'notifications' | 'about') => void;
 }
 
 const MenuItem: React.FC<{ onClick: () => void, children: React.ReactNode, icon: React.ReactNode }> = ({ onClick, children, icon }) => {
@@ -27,6 +27,12 @@ const MainMenuView: React.FC<MainMenuViewProps> = ({ setMenuView }) => {
     return (
         <div className="flex flex-col h-full">
             <ul role="menu" className="space-y-2 flex-grow">
+                <MenuItem
+                    onClick={() => setMenuView('account')}
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
+                >
+                    Account
+                </MenuItem>
                 <MenuItem 
                     onClick={() => setMenuView('settings')}
                     icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -45,15 +46,17 @@ const PermissionsView: React.FC = () => {
 
     // Countdown timer effect for admin edit window
     useEffect(() => {
+        // FIX: Use ReturnType<typeof setTimeout> for browser compatibility instead of NodeJS.Timeout.
+        let timerId: ReturnType<typeof setTimeout>;
         if (isAdminEditEnabled && adminEditTimeRemaining > 0) {
-            const timerId = setTimeout(() => {
+            timerId = setTimeout(() => {
                 setAdminEditTimeRemaining(adminEditTimeRemaining - 1);
             }, 1000);
-            return () => clearTimeout(timerId);
         } else if (adminEditTimeRemaining === 0 && isAdminEditEnabled) {
             setIsAdminEditEnabled(false);
             addToast('Admin edit window has expired.', 'info');
         }
+        return () => clearTimeout(timerId);
     }, [isAdminEditEnabled, adminEditTimeRemaining, addToast]);
 
     const isDirty = useMemo(() => {
@@ -110,6 +113,7 @@ const PermissionsView: React.FC = () => {
         setIsRequestingAdminEdit(true);
         addToast('Requesting temporary admin access...', 'info');
         try {
+            // This fetch simulates a call to an external webhook (like n8n) for approval
             const response = await fetch('http://localhost:5678/webhook/request-admin-edit-access', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -117,6 +121,7 @@ const PermissionsView: React.FC = () => {
             });
 
             if (!response.ok) {
+                // The n8n workflow returns a non-200 status for non-admin roles
                 throw new Error('Access denied by administrator.');
             }
 
@@ -140,6 +145,9 @@ const PermissionsView: React.FC = () => {
             <fieldset disabled={isSaving} className="flex-1 overflow-y-auto space-y-4 pb-24">
                 <ExpandableSection title="Role Permissions" defaultOpen={true}>
                     <p className={`text-sm mb-3 ${themeConfig.subtextColor}`}>Toggle permissions for each role.</p>
+                    <p className={`text-xs italic p-2 rounded-lg bg-black/10 ${themeConfig.subtextColor} mb-3`}>
+                        Note: The 'View Routines' and 'Manage Routines' permissions are subject to each member's individual "Share schedule" privacy setting.
+                    </p>
                     <div className="space-y-4">
                         {(Object.keys(draftPermissions) as Role[]).map(role => {
                             const isRoleDisabled = (currentUser?.role === 'Admin' && role === 'Admin' && !isAdminEditEnabled);

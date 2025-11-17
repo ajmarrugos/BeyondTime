@@ -14,6 +14,7 @@ export interface Member {
   password?: string; // Should be handled securely in a real app
   phone?: string;
   timezone?: string;
+  shareData?: boolean;
 }
 
 // Fix: Extracted Task into its own interface to make it reusable and exportable.
@@ -51,6 +52,7 @@ export interface Routine {
 // --- Permissions ---
 export const permissionNames = [
   'manageMembers',
+  'manageTeams',
   'manageRoutines',
   'viewRoutines',
   'viewIntegrations',

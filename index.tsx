@@ -12,7 +12,8 @@ import { DragStateProvider } from './contexts/DragStateContext';
 import { ToastProvider } from './contexts/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { NotificationProvider } from './contexts/NotificationContext';
-import { AppDataProvider } from './contexts/AppDataContext';
+import { MembersProvider } from './contexts/MembersContext';
+import { RoutinesProvider } from './contexts/RoutinesContext';
 
 
 const rootElement = document.getElementById('root');
@@ -27,23 +28,25 @@ root.render(
       <DeviceProvider>
         <ThemeProvider>
           <ToastProvider>
-            <AppDataProvider>
+            <MembersProvider>
               <AuthProvider>
-                <NotificationProvider>
-                  <SettingsPanelProvider>
-                    <ModalProvider>
-                      <DragStateProvider>
-                        <PermissionsProvider>
-                          <DeviceMotionProvider>
-                            <App />
-                          </DeviceMotionProvider>
-                        </PermissionsProvider>
-                      </DragStateProvider>
-                    </ModalProvider>
-                  </SettingsPanelProvider>
-                </NotificationProvider>
+                <RoutinesProvider>
+                  <NotificationProvider>
+                    <SettingsPanelProvider>
+                      <ModalProvider>
+                        <DragStateProvider>
+                          <PermissionsProvider>
+                            <DeviceMotionProvider>
+                              <App />
+                            </DeviceMotionProvider>
+                          </PermissionsProvider>
+                        </DragStateProvider>
+                      </ModalProvider>
+                    </SettingsPanelProvider>
+                  </NotificationProvider>
+                </RoutinesProvider>
               </AuthProvider>
-            </AppDataProvider>
+            </MembersProvider>
           </ToastProvider>
         </ThemeProvider>
       </DeviceProvider>

@@ -13,24 +13,24 @@ export const sampleData: {
   ],
   members: [
     // Executive Team
-    { id: 1, name: "Alex Chen", teamId: 10, role: "Owner", password: "password", phone: "+1-202-555-0101", timezone: "America/New_York" }, // EST
-    { id: 2, name: "Brenda Vance", teamId: 10, role: "Admin", password: "password", phone: "+1-310-555-0102", timezone: "America/Los_Angeles" }, // PST
+    { id: 1, name: "Alex Chen", teamId: 10, role: "Owner", password: "password", phone: "+1-202-555-0101", timezone: "America/New_York", shareData: true },
+    { id: 2, name: "Brenda Vance", teamId: 10, role: "Admin", password: "password", phone: "+1-310-555-0102", timezone: "America/Los_Angeles", shareData: true },
     
     // Engineering Team
-    { id: 3, name: "Charlie Davis", teamId: 20, role: "Member", password: "password", phone: "+44-20-7946-0103", timezone: "Europe/London" }, // GMT/BST
-    { id: 4, name: "Diana Smith", teamId: 20, role: "Member", password: "password", phone: "+33-1-2345-6789", timezone: "Europe/Paris" }, // CET
-    { id: 5, name: "Ethan Garcia", teamId: 20, role: "Member", password: "password", phone: "+1-512-555-0105", timezone: "America/Chicago" }, // CST
+    { id: 3, name: "Charlie Davis", teamId: 20, role: "Member", password: "password", phone: "+44-20-7946-0103", timezone: "Europe/London", shareData: true },
+    { id: 4, name: "Diana Smith", teamId: 20, role: "Member", password: "password", phone: "+33-1-2345-6789", timezone: "Europe/Paris", shareData: true },
+    { id: 5, name: "Ethan Garcia", teamId: 20, role: "Member", password: "password", phone: "+1-512-555-0105", timezone: "America/Chicago", shareData: true },
 
     // Marketing Team
-    { id: 6, name: "Fiona White", teamId: 30, role: "Member", password: "password", phone: "+81-3-1234-5678", timezone: "Asia/Tokyo" }, // JST
-    { id: 7, name: "George King", teamId: 30, role: "Member", password: "password", phone: "+61-2-9876-5432", timezone: "Australia/Sydney" }, // AEST
+    { id: 6, name: "Fiona White", teamId: 30, role: "Member", password: "password", phone: "+81-3-1234-5678", timezone: "Asia/Tokyo", shareData: true },
+    { id: 7, name: "George King", teamId: 30, role: "Member", password: "password", phone: "+61-2-9876-5432", timezone: "Australia/Sydney", shareData: true },
 
     // Design Team
-    { id: 8, name: "Hannah Scott", teamId: 40, role: "Member", password: "password", phone: "+1-416-555-0108", timezone: "America/Toronto" }, // EST
-    { id: 9, name: "Ivan Petrov", teamId: 40, role: "Member", password: "password", phone: "+49-30-555-0109", timezone: "Europe/Berlin" }, // CET
+    { id: 8, name: "Hannah Scott", teamId: 40, role: "Member", password: "password", phone: "+1-416-555-0108", timezone: "America/Toronto", shareData: true },
+    { id: 9, name: "Ivan Petrov", teamId: 40, role: "Member", password: "password", phone: "+49-30-555-0109", timezone: "Europe/Berlin", shareData: true },
 
     // Unassigned
-    { id: 10, name: "Julia Roberts", role: "Member", password: "password", phone: "+91-22-555-0110", timezone: "Asia/Kolkata" }, // IST
+    { id: 10, name: "Julia Roberts", role: "Member", password: "password", phone: "+91-22-555-0110", timezone: "Asia/Kolkata", shareData: false },
   ],
   routines: [
     // --- HOLIDAYS & BIRTHDAYS (EVENTS) ---

@@ -1,12 +1,11 @@
-
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAppData } from '../contexts/AppDataContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useCurrentTime } from '../hooks/useCurrentTime';
 import { Routine } from '../types';
 import { formatRepetition } from '../utils/formatters';
 import { vibrate } from '../utils/haptics';
+import { useMembers } from '../contexts/MembersContext';
 
 interface RoutineCardActions {
     delete: (id: number) => void;
@@ -44,7 +43,7 @@ const RoutineCard = React.memo(React.forwardRef<HTMLDivElement, RoutineCardProps
     onToggleExpand,
 }, ref) => {
     const { themeConfig, timezone } = useTheme();
-    const { members } = useAppData();
+    const { members } = useMembers();
     const { canEditRoutine, canDeleteRoutine } = usePermissions();
     const currentTime = useCurrentTime();
 

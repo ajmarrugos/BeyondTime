@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useAppData } from '../../contexts/AppDataContext';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { timezones } from '../../config/timezones';
 import { useToast } from '../../contexts/ToastContext';
 import { vibrate } from '../../utils/haptics';
+import { useMembers } from '../../contexts/MembersContext';
 
 interface AddMemberModalProps {
     isOpen: boolean;
@@ -21,7 +21,7 @@ const getDefaultTimezone = () => {
 
 const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose }) => {
     const { themeConfig } = useTheme();
-    const { teams, addMember } = useAppData();
+    const { teams, addMember } = useMembers();
     const { addToast } = useToast();
     const modalRef = useFocusTrap(isOpen);
 

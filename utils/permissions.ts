@@ -12,14 +12,29 @@ export const getVisibleRoutinesSelector = (
     permissionSet: PermissionSet
 ): Routine[] => {
     const scope = permissionSet.viewRoutines;
+
+    const isVisible = (routine: Routine): boolean => {
+        // Always show your own routines
+        if (routine.memberId === currentUser.id) return true;
+        
+        // Find the owner of the routine
+        const routineOwner = members.find(m => m.id === routine.memberId);
+        
+        // If owner not found, or they have disabled sharing, hide it.
+        // Default to true if shareData is not set (for backward compatibility).
+        if (!routineOwner || routineOwner.shareData === false) return false;
+        
+        return true;
+    };
+
     switch (scope) {
         case 'All':
-            return routines;
+            return routines.filter(isVisible);
         case 'Team':
             const teamMemberIds = members
                 .filter(m => m.teamId === currentUser.teamId)
                 .map(m => m.id);
-            return routines.filter(r => teamMemberIds.includes(r.memberId));
+            return routines.filter(r => teamMemberIds.includes(r.memberId) && isVisible(r));
         case 'Self':
             return routines.filter(r => r.memberId === currentUser.id);
         default:
@@ -52,14 +67,30 @@ export const canManageRoutineSelector = (
     permissionSet: PermissionSet
 ): boolean => {
     const scope = permissionSet.manageRoutines;
+
+    // If you are the owner, you can always manage if scope is at least 'Self'
+    if (routine.memberId === currentUser.id) {
+        return scope === 'Self' || scope === 'Team' || scope === 'All';
+    }
+
+    // Find the owner of the routine
+    const routineOwner = members.find(m => m.id === routine.memberId);
+
+    // If you are not the owner, you cannot manage if the owner has disabled sharing.
+    // Default to true if shareData is not set.
+    if (!routineOwner || routineOwner.shareData === false) {
+        return false;
+    }
+
+    // If sharing is enabled, proceed with original permission logic
     switch (scope) {
         case 'All':
             return true;
         case 'Team':
-            const member = members.find(m => m.id === routine.memberId);
-            return member?.teamId === currentUser.teamId;
+            return routineOwner?.teamId === currentUser.teamId;
         case 'Self':
-            return routine.memberId === currentUser.id;
+            // This case is already handled above for the owner
+            return false;
         default:
             return false;
     }

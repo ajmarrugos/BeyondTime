@@ -1,11 +1,8 @@
-
-
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Routine } from '../../types';
 import RoutineCard from '../RoutineCard';
 import ViewHeader from '../ui/ViewHeader';
-import { useAppData } from '../../contexts/AppDataContext';
 import { useModal } from '../../contexts/ModalContext';
 import { useDragState } from '../../contexts/DragStateContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -15,9 +12,10 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../contexts/ToastContext';
 import ViewSwitcher from '../ui/ViewSwitcher';
 import { vibrate } from '../../utils/haptics';
+import { useRoutines } from '../../contexts/RoutinesContext';
+import { useMembers } from '../../contexts/MembersContext';
 
 interface TasksViewProps {
-    routines: Routine[];
     completedTasks: Record<number, number[]>;
     onToggleTask: (routineId: number, taskId: number) => void;
 }
@@ -31,16 +29,21 @@ const CHARS_PER_DESC_LINE = 45;
 const BUDGET_SECTION_HEIGHT = 70;
 
 const TasksView: React.FC<TasksViewProps> = ({ 
-    routines, 
     completedTasks,
     onToggleTask
 }) => {
-    const { setRoutines, members, deleteRoutine } = useAppData();
+    const { getVisibleRoutines } = usePermissions();
+    const { routines, setRoutines, deleteRoutine } = useRoutines();
+    const { members } = useMembers();
+
     const { openRoutineModal, openRoutineModalForEdit, confirm } = useModal();
     const { setIsDraggingRoutine } = useDragState();
     const { canDeleteRoutine, canEditRoutine } = usePermissions();
     const { addToast } = useToast();
     const { themeConfig } = useTheme();
+
+    // Data is now fetched via hooks
+    const visibleRoutines = getVisibleRoutines().filter(r => r.tags.includes('Task') || r.tags.includes('Payment'));
     
     const [searchQuery, setSearchQuery] = useState('');
     const [filter, setFilter] = useState<'All' | 'Tasks' | 'Payments'>('All');
@@ -57,8 +60,8 @@ const TasksView: React.FC<TasksViewProps> = ({
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const taskItems = routines.filter(r => r.tags.includes('Task'));
-        const paymentItems = routines.filter(r => r.tags.includes('Payment'));
+        const taskItems = visibleRoutines.filter(r => r.tags.includes('Task'));
+        const paymentItems = visibleRoutines.filter(r => r.tags.includes('Payment'));
         
         const isCompleted = (item: Routine) => {
             const completedIds = new Set(completedTasks[item.id] || []);
@@ -129,7 +132,7 @@ const TasksView: React.FC<TasksViewProps> = ({
                 }).length;
                  return {
                      mainMetrics: [
-                        { value: routines.length, label: 'Total Items' },
+                        { value: visibleRoutines.length, label: 'Total Items' },
                         { value: pendingTasks, label: 'Pending Tasks' },
                         { value: upcomingPayments, label: 'Upcoming Payments' }
                     ],
@@ -137,12 +140,12 @@ const TasksView: React.FC<TasksViewProps> = ({
                 };
             }
         }
-    }, [routines, completedTasks, filter]);
+    }, [visibleRoutines, completedTasks, filter]);
 
     const filteredByTag = useMemo(() => {
-        if (filter === 'All') return routines;
-        return routines.filter(r => r.tags.includes(filter.slice(0, -1))); // Tasks -> Task
-    }, [routines, filter]);
+        if (filter === 'All') return visibleRoutines;
+        return visibleRoutines.filter(r => r.tags.includes(filter.slice(0, -1))); // Tasks -> Task
+    }, [visibleRoutines, filter]);
 
     const filteredRoutines = useMemo(() => {
         const sourceList = filteredByTag;
@@ -306,14 +309,14 @@ const TasksView: React.FC<TasksViewProps> = ({
                 actionButton={{ label: "Add Item", onClick: openRoutineModal }}
             />
             
-            {routines.length > 0 && (
+            {visibleRoutines.length > 0 && (
                 <SummaryMetrics 
                     mainMetrics={summaryMetrics.mainMetrics} 
                     expandedMetrics={summaryMetrics.expandedMetrics} 
                 />
             )}
 
-            {routines.length > 0 ? (
+            {visibleRoutines.length > 0 ? (
                 <div ref={containerRef} className="flex-1 overflow-y-auto -mx-6 px-6">
                     <div className="max-w-3xl mx-auto relative" style={{ height: `${totalHeight}px` }}>
                         {filteredRoutines.length > 0 ? (
@@ -325,11 +328,8 @@ const TasksView: React.FC<TasksViewProps> = ({
                                         <RoutineCard 
                                             routine={routine}
                                             ref={el => {
-                                                if (el) {
-                                                    routineCardRefs.current.set(routine.id, el);
-                                                } else {
-                                                    routineCardRefs.current.delete(routine.id);
-                                                }
+                                                if (el) routineCardRefs.current.set(routine.id, el);
+                                                else routineCardRefs.current.delete(routine.id);
                                             }}
                                             isPlaceholder={activeId === routine.id}
                                             isDeleting={deletingRoutineId === routine.id}
@@ -360,7 +360,7 @@ const TasksView: React.FC<TasksViewProps> = ({
                 </div>
             )}
 
-            {routines.length > 0 && (
+            {visibleRoutines.length > 0 && (
                  <footer className="flex-shrink-0 pt-4">
                     <div className="relative mb-3 max-w-3xl mx-auto w-full">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

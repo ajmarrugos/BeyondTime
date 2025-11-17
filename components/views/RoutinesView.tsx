@@ -1,11 +1,8 @@
-
-
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Routine } from '../../types';
 import RoutineCard from '../RoutineCard';
 import ViewHeader from '../ui/ViewHeader';
-import { useAppData } from '../../contexts/AppDataContext';
 import { useModal } from '../../contexts/ModalContext';
 import { useDragState } from '../../contexts/DragStateContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -16,15 +13,15 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../contexts/ToastContext';
 import ViewSwitcher from '../ui/ViewSwitcher';
 import { vibrate } from '../../utils/haptics';
+import { useRoutines } from '../../contexts/RoutinesContext';
+import { useMembers } from '../../contexts/MembersContext';
 
 interface RoutinesViewProps {
-    routines: Routine[];
     completedTasks: Record<number, number[]>;
     onToggleTask: (routineId: number, taskId: number) => void;
 }
 
 const ROW_PADDING_BOTTOM = 12;
-
 const BASE_COLLAPSED_HEIGHT = 184;
 const BASE_EXPANDED_HEIGHT = 230;
 const HEIGHT_PER_TASK = 44;
@@ -33,17 +30,22 @@ const CHARS_PER_DESC_LINE = 45;
 const BUDGET_SECTION_HEIGHT = 70;
 
 const RoutinesView: React.FC<RoutinesViewProps> = ({ 
-    routines, 
     completedTasks,
     onToggleTask
 }) => {
-    const { setRoutines, members, deleteRoutine } = useAppData();
+    const { getVisibleRoutines } = usePermissions();
+    const { routines, setRoutines, deleteRoutine } = useRoutines();
+    const { members } = useMembers();
+
     const { openRoutineModal, openRoutineModalForEdit, confirm } = useModal();
     const { setIsDraggingRoutine } = useDragState();
     const { canDeleteRoutine, canEditRoutine } = usePermissions();
     const { addToast } = useToast();
     const { themeConfig } = useTheme();
     const currentTime = useCurrentTime();
+
+    // Data is now fetched via hooks
+    const visibleRoutines = getVisibleRoutines().filter(r => r.tags.includes('Routine') || r.tags.includes('Event'));
     
     const [searchQuery, setSearchQuery] = useState('');
     const [filter, setFilter] = useState<'All' | 'Events' | 'Routines'>('All');
@@ -60,8 +62,8 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
         const now = currentTime;
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        const routineItems = routines.filter(r => r.tags.includes('Routine'));
-        const eventItems = routines.filter(r => r.tags.includes('Event'));
+        const routineItems = visibleRoutines.filter(r => r.tags.includes('Routine'));
+        const eventItems = visibleRoutines.filter(r => r.tags.includes('Event'));
         
         // --- Routine Helpers ---
         const isRoutineLive = (routine: Routine) => {
@@ -154,7 +156,7 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
 
                 return {
                      mainMetrics: [
-                        { value: routines.length, label: 'Total Items' },
+                        { value: visibleRoutines.length, label: 'Total Items' },
                         { value: liveNow, label: 'Live Routines' },
                         { value: upcomingEvents, label: 'Upcoming Events' }
                     ],
@@ -166,12 +168,12 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
                 };
             }
         }
-    }, [routines, completedTasks, currentTime, filter]);
+    }, [visibleRoutines, completedTasks, currentTime, filter]);
 
     const filteredByTag = useMemo(() => {
-        if (filter === 'All') return routines;
-        return routines.filter(r => r.tags.includes(filter.slice(0, -1))); // Routines -> Routine
-    }, [routines, filter]);
+        if (filter === 'All') return visibleRoutines;
+        return visibleRoutines.filter(r => r.tags.includes(filter.slice(0, -1))); // Routines -> Routine
+    }, [visibleRoutines, filter]);
 
     const filteredRoutines = useMemo(() => {
         const sourceList = filteredByTag;
@@ -335,14 +337,14 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
                 actionButton={{ label: "Add Item", onClick: openRoutineModal }}
             />
             
-            {routines.length > 0 && (
+            {visibleRoutines.length > 0 && (
                 <SummaryMetrics 
                     mainMetrics={summaryMetrics.mainMetrics} 
                     expandedMetrics={summaryMetrics.expandedMetrics} 
                 />
             )}
 
-            {routines.length > 0 ? (
+            {visibleRoutines.length > 0 ? (
                 <div ref={containerRef} className="flex-1 overflow-y-auto -mx-6 px-6">
                     <div className="max-w-3xl mx-auto relative" style={{ height: `${totalHeight}px` }}>
                         {filteredRoutines.length > 0 ? (
@@ -354,11 +356,8 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
                                         <RoutineCard 
                                             routine={routine}
                                             ref={el => {
-                                                if (el) {
-                                                    routineCardRefs.current.set(routine.id, el);
-                                                } else {
-                                                    routineCardRefs.current.delete(routine.id);
-                                                }
+                                                if (el) routineCardRefs.current.set(routine.id, el);
+                                                else routineCardRefs.current.delete(routine.id);
                                             }}
                                             isPlaceholder={activeId === routine.id}
                                             isDeleting={deletingRoutineId === routine.id}
@@ -389,7 +388,7 @@ const RoutinesView: React.FC<RoutinesViewProps> = ({
                 </div>
             )}
 
-            {routines.length > 0 && (
+            {visibleRoutines.length > 0 && (
                  <footer className="flex-shrink-0 pt-4">
                     <div className="relative mb-3 max-w-3xl mx-auto w-full">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

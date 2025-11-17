@@ -11,8 +11,9 @@ import IntegrationsDataView from './settings/IntegrationsDataView';
 import PermissionsView from './settings/PermissionsView';
 import NotificationsView from './settings/NotificationsView';
 import AboutView from './settings/AboutView';
+import AccountSettingsView from './settings/AccountSettingsView';
 
-type MenuView = 'main' | 'settings' | 'integrations' | 'permissions' | 'notifications' | 'about';
+type MenuView = 'main' | 'account' | 'settings' | 'integrations' | 'permissions' | 'notifications' | 'about';
 
 interface SettingsPanelProps {
     isOpen: boolean;
@@ -21,6 +22,7 @@ interface SettingsPanelProps {
 
 const viewTitles: Record<MenuView, string> = {
     main: 'Menu',
+    account: 'Account',
     settings: 'Appearance',
     integrations: 'Integrations & Data',
     permissions: 'Roles & Permissions',
@@ -50,6 +52,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
         switch(view) {
             case 'main':
                 return <div className={`${commonStyle} ${activeStyle}`}><MainMenuView setMenuView={setMenuView} /></div>;
+            case 'account':
+                return <div className={`${commonStyle} ${activeStyle}`}><AccountSettingsView /></div>;
             case 'settings':
                 return <div className={`${commonStyle} ${activeStyle}`}><AppearanceSettingsView /></div>;
             case 'integrations':
@@ -93,6 +97,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
 
                 <div className="relative flex-1 overflow-hidden">
                     {renderView('main')}
+                    {renderView('account')}
                     {renderView('settings')}
                     {renderView('integrations')}
                     {renderView('permissions')}

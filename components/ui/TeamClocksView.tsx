@@ -4,20 +4,22 @@ import { Member, Routine, Team } from '../../types';
 import ExpandableSection from './ExpandableSection';
 import MiniClock from './MiniClock';
 import { useAuth } from '../../contexts/AuthContext';
+import { useMembers } from '../../contexts/MembersContext';
+import { useRoutines } from '../../contexts/RoutinesContext';
 
 interface TeamClocksViewProps {
-    members: Member[];
-    teams: Team[];
-    allRoutines: Routine[];
     time: Date;
     onEditMember: (member: Member) => void;
     onDeleteMember: (member: Member) => void;
     onAddItemForMember: (memberId: number) => void;
 }
 
-const TeamClocksView: React.FC<TeamClocksViewProps> = ({ members, teams, allRoutines, time, onEditMember, onDeleteMember, onAddItemForMember }) => {
+const TeamClocksView: React.FC<TeamClocksViewProps> = ({ time, onEditMember, onDeleteMember, onAddItemForMember }) => {
     const { currentUser } = useAuth();
     const { getManageableMembers } = usePermissions();
+    const { members, teams } = useMembers();
+    const { routines: allRoutines } = useRoutines();
+
 
     if (currentUser?.role !== 'Admin' && currentUser?.role !== 'Owner') {
         return null;
@@ -51,7 +53,7 @@ const TeamClocksView: React.FC<TeamClocksViewProps> = ({ members, teams, allRout
                 if (!teamMembers || teamMembers.length === 0) return null;
 
                 return (
-                    <ExpandableSection key={team.id} title={`${team.name} Team`} defaultOpen={true}>
+                    <ExpandableSection key={team.id} title={`${team.name} Team (${teamMembers.length})`} defaultOpen={true}>
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-y-4 gap-x-2">
                             {teamMembers.map(member => (
                                 <MiniClock 
@@ -70,7 +72,7 @@ const TeamClocksView: React.FC<TeamClocksViewProps> = ({ members, teams, allRout
             })}
             
             {unassignedMembers.length > 0 && (
-                 <ExpandableSection title="Unassigned Members" defaultOpen={true}>
+                 <ExpandableSection title={`Unassigned Members (${unassignedMembers.length})`} defaultOpen={true}>
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-y-4 gap-x-2">
                         {unassignedMembers.map(member => (
                              <MiniClock 

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useAppData } from '../../contexts/AppDataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useMembers } from '../../contexts/MembersContext';
+import { useDataManagement } from '../../hooks/useDataManagement';
 import Logo from '../Logo';
 
 const LoginView: React.FC = () => {
-    const { members, loadSampleData } = useAppData();
+    const { members } = useMembers();
+    const { loadSampleData } = useDataManagement();
     const { login } = useAuth();
     const { themeConfig } = useTheme();
     

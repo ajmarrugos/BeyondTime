@@ -1,8 +1,10 @@
+
 import { PermissionsModel } from '../types';
 
 export const initialPermissions: PermissionsModel = {
   Admin: {
     manageMembers: 'All',
+    manageTeams: 'All',
     manageRoutines: 'Self',
     viewRoutines: 'All',
     viewIntegrations: 'All',
@@ -10,6 +12,7 @@ export const initialPermissions: PermissionsModel = {
   },
   Owner: {
     manageMembers: 'Team',
+    manageTeams: 'All',
     manageRoutines: 'Self',
     viewRoutines: 'Team',
     viewIntegrations: 'None',
@@ -17,6 +20,7 @@ export const initialPermissions: PermissionsModel = {
   },
   Member: {
     manageMembers: 'None',
+    manageTeams: 'None',
     manageRoutines: 'Self',
     viewRoutines: 'Self',
     viewIntegrations: 'None',

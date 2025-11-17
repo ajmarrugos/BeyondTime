@@ -1,12 +1,9 @@
-
-
-
 import React, { useState, useMemo } from 'react';
 import WeeklyView from './WeeklyView';
 import MonthlyView from './MonthlyView';
 import ClockDisplay from '../ui/ClockDisplay'; // New Component
 import ViewSwitcher from '../ui/ViewSwitcher';
-import { Routine, Member, Team } from '../../types';
+import { Routine } from '../../types';
 
 type SubView = 'clock' | 'weekly' | 'monthly';
 
@@ -14,9 +11,6 @@ interface ClockViewProps {
     showGlow?: boolean;
     routines: Routine[];
     onItemClick: (routine: Routine) => void;
-    allRoutines: Routine[];
-    members: Member[];
-    teams: Team[];
 }
 
 const ClockView: React.FC<ClockViewProps> = (props) => {

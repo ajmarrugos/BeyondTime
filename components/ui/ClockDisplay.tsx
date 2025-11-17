@@ -1,3 +1,4 @@
+
 import React, { useCallback, useMemo } from 'react';
 import Clock from '../Clock';
 import TodaySummaryCard from './TodaySummaryCard';
@@ -5,36 +6,33 @@ import TeamClocksView from './TeamClocksView';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useClockInteraction } from '../../hooks/useInteractiveClock';
 import { useClockTimer } from '../../hooks/useClockTimer';
-import { Routine, Member, Team } from '../../types';
-import { useAuth } from '../../contexts/AuthContext';
+import { Routine, Member } from '../../types';
 import ManagementActions from './ManagementActions';
 import { useModal } from '../../contexts/ModalContext';
-import { useAppData } from '../../contexts/AppDataContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useDataManagement } from '../../hooks/useDataManagement';
+import { useRoutines } from '../../contexts/RoutinesContext';
+import { usePermissions } from '../../hooks/usePermissions';
 
 
 interface ClockDisplayProps {
     showGlow?: boolean;
-    routines: Routine[];
+    routines: Routine[]; // Routines for the current user only
     onItemClick: (routine: Routine) => void;
-    allRoutines: Routine[];
-    members: Member[];
-    teams: Team[];
 }
 
 const ClockDisplay: React.FC<ClockDisplayProps> = ({ 
     showGlow = false,
     routines,
     onItemClick,
-    allRoutines,
-    members,
-    teams
 }) => {
     const { themeConfig, clockLayout, clockEffects, timezone } = useTheme();
-    const { currentUser } = useAuth();
     const { openRoutineModal, openEditMemberModal, confirm } = useModal();
-    const { deleteMemberAndRoutines } = useAppData();
     const { addToast } = useToast();
+    const { deleteMemberAndRoutines } = useDataManagement();
+    const { routines: allRoutines } = useRoutines();
+    const { canManageMembers, canManageTeams } = usePermissions();
+
 
     const { isTimerActive, timeRemaining, duration, startTimer, cancelTimer } = useClockTimer();
     
@@ -125,7 +123,7 @@ const ClockDisplay: React.FC<ClockDisplayProps> = ({
         openRoutineModal(memberId);
     }, [openRoutineModal]);
 
-    const canManage = currentUser?.role === 'Admin' || currentUser?.role === 'Owner';
+    const canManage = canManageMembers() || canManageTeams();
     const canViewTeamClocks = canManage;
     const isFocusMode = isTimerActive || isSettingTimer;
 
@@ -193,9 +191,6 @@ const ClockDisplay: React.FC<ClockDisplayProps> = ({
 
             {canViewTeamClocks && (
                 <TeamClocksView
-                    members={members}
-                    teams={teams}
-                    allRoutines={allRoutines}
                     time={time}
                     onEditMember={handleEditMember}
                     onDeleteMember={handleDeleteMember}

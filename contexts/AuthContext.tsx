@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import usePersistentState from '../hooks/usePersistentState';
 import { Member } from '../types';
-import { useAppData } from './AppDataContext';
+import { useMembers } from './MembersContext';
 
 interface AuthContextType {
     currentUser: Member | null;
@@ -13,11 +13,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [currentUserId, setCurrentUserId] = usePersistentState<number | null>('currentUserId', null);
-    const { members } = useAppData();
+    const { members } = useMembers();
 
     const currentUser = useMemo(() => {
         if (currentUserId === null) return null;
-        // The derived state ensures that if the member's data is updated
+        // This derived state ensures that if the member's data is updated
         // elsewhere, the currentUser object here will reflect those changes instantly.
         return members.find(m => m.id === currentUserId) ?? null;
     }, [currentUserId, members]);
