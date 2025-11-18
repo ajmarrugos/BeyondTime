@@ -2,7 +2,6 @@ import React, { createContext, useContext, useMemo, useEffect } from 'react';
 import { themes, Theme, ThemeName } from '../config/themes';
 import usePersistentState from '../hooks/usePersistentState';
 import { ClockLayout, ClockEffects, StartOfWeek } from '../types';
-import { useAuth } from './AuthContext';
 
 interface ThemeContextType {
     themeConfig: Theme;
@@ -38,8 +37,6 @@ const getDefaultTimezone = () => {
 };
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { currentUser } = useAuth(); // Now available due to provider reordering
-
     const [currentTheme, setCurrentTheme] = usePersistentState<ThemeName>('theme', 'dark');
     const [accentColor, setAccentColor] = usePersistentState<string>('accentColor', '#6366f1');
     const [startOfWeek, setStartOfWeek] = usePersistentState<StartOfWeek>('startOfWeek', 'sunday');
@@ -52,19 +49,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         parallax: true,
         glint: true,
     });
-
-    // Auto-load personalization settings on login
-    useEffect(() => {
-        if (currentUser?.personalization) {
-            const p = currentUser.personalization;
-            setCurrentTheme(p.theme);
-            setAccentColor(p.accentColor);
-            setClockLayout(p.clockLayout);
-            setClockEffects(p.clockEffects);
-            setStartOfWeek(p.startOfWeek);
-            setAnimationSpeed(p.animationSpeed);
-        }
-    }, [currentUser, setCurrentTheme, setAccentColor, setClockLayout, setClockEffects, setStartOfWeek, setAnimationSpeed]);
 
     useEffect(() => {
         document.documentElement.style.setProperty('--accent-color', accentColor);
@@ -80,11 +64,24 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const handleAnimationSpeedChange = (speed: number) => setAnimationSpeed(speed);
     const handleTimezoneChange = (tz: string) => setTimezone(tz);
 
-    const themeConfig = themes[currentTheme];
+    // FIX: Validate the theme from localStorage. If it's not a valid key in our themes object,
+    // fall back to 'dark' to prevent the app from crashing on startup.
+    const validThemeName = useMemo(() => {
+        return (Object.keys(themes) as ThemeName[]).includes(currentTheme) ? currentTheme : 'dark';
+    }, [currentTheme]);
+
+    const themeConfig = themes[validThemeName];
+
+    // If the theme was invalid, this effect will correct it in localStorage for next time.
+    useEffect(() => {
+        if (currentTheme !== validThemeName) {
+            setCurrentTheme(validThemeName);
+        }
+    }, [currentTheme, validThemeName, setCurrentTheme]);
     
     const value = useMemo(() => ({
         themeConfig,
-        currentTheme,
+        currentTheme: validThemeName,
         accentColor,
         handleThemeChange,
         handleAccentColorChange,
@@ -99,7 +96,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         handleAnimationSpeedChange,
         timezone,
         handleTimezoneChange,
-    }), [themeConfig, currentTheme, accentColor, clockLayout, clockEffects, startOfWeek, animationSpeed, timezone]);
+    }), [themeConfig, validThemeName, accentColor, clockLayout, clockEffects, startOfWeek, animationSpeed, timezone, handleThemeChange, handleAccentColorChange, handleClockLayoutChange, handleClockEffectChange, setClockEffects, handleStartOfWeekChange, handleAnimationSpeedChange, handleTimezoneChange]);
 
     return (
         <ThemeContext.Provider value={value}>

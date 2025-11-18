@@ -30,7 +30,6 @@ const CalendarItem: React.FC<CalendarItemProps> = ({ title, icon, color, type, o
             title={title} // Tooltip for desktop
             aria-label={`View details for ${title}`}
             className={`${sizeClasses[size].container} rounded-full border flex items-center justify-center flex-shrink-0 transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent`}
-            // Fix: 'ringColor' is not a valid CSS property. Use the '--tw-ring-color' custom property to set the ring color dynamically with Tailwind CSS.
             style={{ ...style, '--tw-ring-color': itemColor ?? accentColor } as React.CSSProperties}
         >
             <svg 

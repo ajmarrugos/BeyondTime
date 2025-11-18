@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import usePersistentState from '../hooks/usePersistentState';
 import { Member } from '../types';
-import { useMembers } from './MembersContext';
+import { useAppData } from './AppDataContext';
 
 interface AuthContextType {
     currentUser: Member | null;
@@ -13,7 +13,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [currentUserId, setCurrentUserId] = usePersistentState<number | null>('currentUserId', null);
-    const { members } = useMembers();
+    const { members } = useAppData();
 
     const currentUser = useMemo(() => {
         if (currentUserId === null) return null;

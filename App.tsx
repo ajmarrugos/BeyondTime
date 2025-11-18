@@ -1,4 +1,5 @@
 
+
 import React, { useCallback, useRef, useEffect, memo, useState, useMemo } from 'react';
 
 // Hooks
@@ -9,9 +10,8 @@ import { usePermissions } from './hooks/usePermissions';
 import { useModal } from './contexts/ModalContext';
 import { useSettingsPanel } from './contexts/SettingsPanelContext';
 import { useDragState } from './contexts/DragStateContext';
-import usePersistentState from './hooks/usePersistentState';
 import { useCurrentTime } from './hooks/useCurrentTime';
-import { useRoutines } from './contexts/RoutinesContext';
+import { useAppData } from './contexts/AppDataContext';
 
 
 // Components
@@ -52,6 +52,7 @@ const MemoTasksView = memo(TasksView);
 const App: React.FC = () => {
   const { themeConfig, handleThemeChange, currentTheme, timezone } = useTheme();
   const { currentUser } = useAuth();
+  const { routines } = useAppData();
   const { canViewSettingsPanel } = usePermissions();
   const {
     isRoutineModalMounted, isRoutineModalOpen, closeRoutineModal, handleRoutineModalExited,
@@ -63,7 +64,6 @@ const App: React.FC = () => {
   } = useModal();
   const { isSettingsOpen, openSettings, closeSettings } = useSettingsPanel();
   const { isDraggingRoutine } = useDragState();
-  const { routines } = useRoutines();
  
   // View state is managed in-memory to avoid security errors in sandboxed environments
   const [currentView, navigate] = useState(1); // Default to clock view (index 1)
@@ -88,9 +88,6 @@ const App: React.FC = () => {
 
   // Clock glow effect state
   const [showClockGlow, setShowClockGlow] = useState(false);
-
-  // State for completed tasks, this could be moved to a context if needed elsewhere
-  const [completedTasks, setCompletedTasks] = usePersistentState<Record<number, number[]>>('completedTasks', {});
   
   // Sleep Mode State
   const [isSleepModeActive, setIsSleepModeActive] = useState(false);
@@ -98,27 +95,6 @@ const App: React.FC = () => {
   const currentTime = useCurrentTime();
 
   const anyModalOpen = isSettingsOpen || isRoutineModalOpen || isAddMemberModalOpen || isEditMemberModalOpen || isTeamSettingsModalOpen || isRoutineDetailModalOpen || isConfirmModalOpen;
-
-  const handleToggleTask = useCallback((routineId: number, taskId: number) => {
-    setCompletedTasks(prev => {
-        const newCompletedState = { ...prev };
-        const completedTasksForRoutine = new Set(newCompletedState[routineId] || []);
-
-        if (completedTasksForRoutine.has(taskId)) {
-            completedTasksForRoutine.delete(taskId);
-        } else {
-            completedTasksForRoutine.add(taskId);
-        }
-
-        if (completedTasksForRoutine.size === 0) {
-            delete newCompletedState[routineId];
-        } else {
-            newCompletedState[routineId] = Array.from(completedTasksForRoutine);
-        }
-
-        return newCompletedState;
-    });
-  }, [setCompletedTasks]);
 
   const handleLogoClick = useCallback(() => {
     navigate(1); // Switch to the clock view.
@@ -294,10 +270,7 @@ const App: React.FC = () => {
                 isInteractionDisabled={anyModalOpen}
             >
                 <section className="w-full h-full flex-shrink-0">
-                  <MemoRoutinesView 
-                    completedTasks={completedTasks}
-                    onToggleTask={handleToggleTask}
-                  />
+                  <MemoRoutinesView />
                 </section>
                 <section className="w-full h-full flex-shrink-0">
                     <MemoClockView 
@@ -308,10 +281,8 @@ const App: React.FC = () => {
                     />
                 </section>
                 <section className="w-full h-full flex-shrink-0">
-                  <MemoTasksView
-                    completedTasks={completedTasks}
-                    onToggleTask={handleToggleTask}
-                  />
+                  {/* FIX: Removed props as the component now fetches its own data */}
+                  <MemoTasksView />
                 </section>
             </SwipeableLayout>
             
@@ -359,8 +330,6 @@ const App: React.FC = () => {
                 isOpen={isRoutineDetailModalOpen}
                 onClose={closeRoutineDetailModal}
                 routine={detailRoutine}
-                completedTasks={completedTasks}
-                onToggleTask={handleToggleTask}
             />
           )}
 

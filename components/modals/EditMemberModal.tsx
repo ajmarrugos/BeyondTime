@@ -5,7 +5,7 @@ import { timezones } from '../../config/timezones';
 import { useToast } from '../../contexts/ToastContext';
 import { Member } from '../../types';
 import { vibrate } from '../../utils/haptics';
-import { useMembers } from '../../contexts/MembersContext';
+import { useAppData } from '../../contexts/AppDataContext';
 
 interface EditMemberModalProps {
     isOpen: boolean;
@@ -23,7 +23,7 @@ const getDefaultTimezone = () => {
 
 const EditMemberModal: React.FC<EditMemberModalProps> = ({ isOpen, onClose, member }) => {
     const { themeConfig } = useTheme();
-    const { teams, updateMember } = useMembers();
+    const { teams, updateMember } = useAppData();
     const { addToast } = useToast();
     const modalRef = useFocusTrap(isOpen);
 

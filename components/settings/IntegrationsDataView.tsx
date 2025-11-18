@@ -2,11 +2,11 @@ import React, { useState, useRef } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import ToggleSwitch from '../forms/ToggleSwitch';
 import ExpandableSection from '../ui/ExpandableSection';
-import { useDataManagement } from '../../hooks/useDataManagement';
+import { useAppData } from '../../contexts/AppDataContext';
 
 const IntegrationsDataView: React.FC = () => {
     const { themeConfig } = useTheme();
-    const { loadSampleData, importData, exportData } = useDataManagement();
+    const { loadSampleData, importData, exportData } = useAppData();
     const dataFileInputRef = useRef<HTMLInputElement>(null);
 
     const [exportSelection, setExportSelection] = useState({

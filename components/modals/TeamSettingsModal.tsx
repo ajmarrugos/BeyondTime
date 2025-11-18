@@ -4,7 +4,7 @@ import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useModal } from '../../contexts/ModalContext';
 import { Team } from '../../types';
 import { vibrate } from '../../utils/haptics';
-import { useMembers } from '../../contexts/MembersContext';
+import { useAppData } from '../../contexts/AppDataContext';
 
 interface TeamSettingsModalProps {
     isOpen: boolean;
@@ -13,7 +13,7 @@ interface TeamSettingsModalProps {
 
 const TeamSettingsModal: React.FC<TeamSettingsModalProps> = ({ isOpen, onClose }) => {
     const { themeConfig } = useTheme();
-    const { teams, addTeam, updateTeam, deleteTeam } = useMembers();
+    const { teams, addTeam, updateTeam, deleteTeam } = useAppData();
     const { confirm } = useModal();
     const modalRef = useFocusTrap(isOpen);
 

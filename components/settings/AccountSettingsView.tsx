@@ -1,24 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useMembers } from '../../contexts/MembersContext';
+import { useAppData } from '../../contexts/AppDataContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useToast } from '../../contexts/ToastContext';
 import { timezones } from '../../config/timezones';
 import ExpandableSection from '../ui/ExpandableSection';
 import ToggleSwitch from '../forms/ToggleSwitch';
-import { useModal } from '../../contexts/ModalContext';
 
 const AccountSettingsView: React.FC = () => {
     const { currentUser } = useAuth();
-    const { teams, updateMember, changePassword } = useMembers();
+    const { teams, updateMember, changePassword } = useAppData();
+    const { themeConfig } = useTheme();
     const { addToast } = useToast();
-    const { confirm } = useModal();
-    const { 
-        themeConfig,
-        currentTheme, accentColor, clockLayout, clockEffects, startOfWeek, animationSpeed,
-        handleThemeChange, handleAccentColorChange, handleClockLayoutChange, 
-        setClockEffects, handleStartOfWeekChange, handleAnimationSpeedChange
-    } = useTheme();
 
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
@@ -66,46 +59,6 @@ const AccountSettingsView: React.FC = () => {
         updateMember(currentUser.id, { shareData: enabled });
         addToast(`Schedule sharing ${enabled ? 'enabled' : 'disabled'}.`, 'info');
     };
-
-    const handleSaveSettings = () => {
-        const personalization = {
-            theme: currentTheme,
-            accentColor,
-            clockLayout,
-            clockEffects,
-            startOfWeek,
-            animationSpeed,
-        };
-        updateMember(currentUser.id, { personalization });
-        addToast('Personalization settings saved to your account.', 'success');
-    };
-
-    const handleLoadSettings = () => {
-        if (currentUser.personalization) {
-            const p = currentUser.personalization;
-            handleThemeChange(p.theme);
-            handleAccentColorChange(p.accentColor);
-            handleClockLayoutChange(p.clockLayout);
-            setClockEffects(p.clockEffects);
-            handleStartOfWeekChange(p.startOfWeek);
-            handleAnimationSpeedChange(p.animationSpeed);
-            addToast('Saved settings have been loaded.', 'success');
-        } else {
-            addToast('No saved settings found for your account.', 'info');
-        }
-    };
-
-    const handleRemoveSettings = () => {
-        confirm({
-            title: 'Remove Saved Settings',
-            message: 'This will remove your synced personalization from your account. Your local settings will not be affected.',
-            onConfirm: () => {
-                updateMember(currentUser.id, { personalization: undefined });
-                addToast('Saved settings removed from account.', 'success');
-            },
-            confirmText: 'Remove',
-        });
-    };
     
     const inputBaseStyle = `w-full p-3 rounded-xl bg-black/10 ${themeConfig.textColor} placeholder-gray-400/70 focus:outline-none focus:ring-2 focus:ring-accent`;
 
@@ -151,17 +104,6 @@ const AccountSettingsView: React.FC = () => {
                 </div>
             </ExpandableSection>
             
-            <ExpandableSection title="Sync Personalization">
-                <p className={`text-sm mb-3 ${themeConfig.subtextColor}`}>
-                    Save your current appearance and layout settings to your account to use them on any device.
-                </p>
-                <div className="space-y-2">
-                    <button onClick={handleSaveSettings} className="w-full p-3 rounded-xl font-semibold bg-white/5 hover:bg-white/10 transition-colors">Save Current Settings</button>
-                    <button onClick={handleLoadSettings} disabled={!currentUser.personalization} className="w-full p-3 rounded-xl font-semibold bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Load Saved Settings</button>
-                    <button onClick={handleRemoveSettings} disabled={!currentUser.personalization} className="w-full p-3 rounded-xl font-semibold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Remove Saved Settings</button>
-                </div>
-            </ExpandableSection>
-
             {currentUser.role === 'Member' && (
                 <ExpandableSection title="Privacy">
                     <ToggleSwitch

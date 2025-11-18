@@ -5,7 +5,7 @@ import { useCurrentTime } from '../hooks/useCurrentTime';
 import { Routine } from '../types';
 import { formatRepetition } from '../utils/formatters';
 import { vibrate } from '../utils/haptics';
-import { useMembers } from '../contexts/MembersContext';
+import { useAppData } from '../contexts/AppDataContext';
 
 interface RoutineCardActions {
     delete: (id: number) => void;
@@ -43,7 +43,7 @@ const RoutineCard = React.memo(React.forwardRef<HTMLDivElement, RoutineCardProps
     onToggleExpand,
 }, ref) => {
     const { themeConfig, timezone } = useTheme();
-    const { members } = useMembers();
+    const { members } = useAppData();
     const { canEditRoutine, canDeleteRoutine } = usePermissions();
     const currentTime = useCurrentTime();
 

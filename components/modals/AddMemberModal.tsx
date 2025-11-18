@@ -4,7 +4,7 @@ import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { timezones } from '../../config/timezones';
 import { useToast } from '../../contexts/ToastContext';
 import { vibrate } from '../../utils/haptics';
-import { useMembers } from '../../contexts/MembersContext';
+import { useAppData } from '../../contexts/AppDataContext';
 
 interface AddMemberModalProps {
     isOpen: boolean;
@@ -21,7 +21,7 @@ const getDefaultTimezone = () => {
 
 const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose }) => {
     const { themeConfig } = useTheme();
-    const { teams, addMember } = useMembers();
+    const { teams, addMember } = useAppData();
     const { addToast } = useToast();
     const modalRef = useFocusTrap(isOpen);
 

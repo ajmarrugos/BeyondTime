@@ -1,4 +1,3 @@
-
 import React, { useCallback, useMemo } from 'react';
 import Clock from '../Clock';
 import TodaySummaryCard from './TodaySummaryCard';
@@ -10,8 +9,7 @@ import { Routine, Member } from '../../types';
 import ManagementActions from './ManagementActions';
 import { useModal } from '../../contexts/ModalContext';
 import { useToast } from '../../contexts/ToastContext';
-import { useDataManagement } from '../../hooks/useDataManagement';
-import { useRoutines } from '../../contexts/RoutinesContext';
+import { useAppData } from '../../contexts/AppDataContext';
 import { usePermissions } from '../../hooks/usePermissions';
 
 
@@ -29,8 +27,7 @@ const ClockDisplay: React.FC<ClockDisplayProps> = ({
     const { themeConfig, clockLayout, clockEffects, timezone } = useTheme();
     const { openRoutineModal, openEditMemberModal, confirm } = useModal();
     const { addToast } = useToast();
-    const { deleteMemberAndRoutines } = useDataManagement();
-    const { routines: allRoutines } = useRoutines();
+    const { deleteMemberAndRoutines, routines: allRoutines } = useAppData();
     const { canManageMembers, canManageTeams } = usePermissions();
 
 

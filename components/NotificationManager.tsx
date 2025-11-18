@@ -1,4 +1,3 @@
-// FIX: Import React to make React.FC available.
 import React, { useEffect, useRef } from 'react';
 import { useNotificationContext } from '../contexts/NotificationContext';
 import { usePermissions } from '../hooks/usePermissions';

@@ -3,7 +3,6 @@
 
 
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-// FIX: Import ClockLayout and ClockEffects from types/index.ts, not ThemeContext.
 import { useTheme } from '../contexts/ThemeContext';
 import { Routine, ClockLayout, ClockEffects } from '../types';
 import { useDevice } from '../contexts/DeviceContext';
@@ -22,7 +21,6 @@ interface ClockProps {
     timeRemaining: number;
     timerDuration: number;
     timerDraftAngle: number;
-    // FIX: Add isDimmed prop to allow dimming of the clock face.
     isDimmed?: boolean;
 }
 

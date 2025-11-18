@@ -12,22 +12,28 @@ interface AppDataContextType {
     members: Member[];
     routines: Routine[];
     teams: Team[];
-    
+    completedTasks: Record<number, number[]>;
+
     // Actions
+    setMembers: (members: Member[] | ((prev: Member[]) => Member[])) => void;
     setRoutines: (routines: Routine[] | ((prev: Routine[]) => Routine[])) => void;
+    setTeams: (teams: Team[] | ((prev: Team[]) => Team[])) => void;
+    
     addMember: (details: { name: string; phone: string; timezone: string; teamId?: number; }) => void;
-    updateMember: (id: number, updates: Partial<Pick<Member, 'name' | 'role' | 'teamId' | 'phone' | 'timezone'>>) => void;
+    updateMember: (id: number, updates: Partial<Pick<Member, 'name' | 'role' | 'teamId' | 'phone' | 'timezone' | 'shareData'>>) => void;
+    changePassword: (memberId: number, currentPass: string, newPass: string) => boolean;
+    
     addRoutine: (routine: Omit<Routine, 'id'>) => void;
     updateRoutine: (routine: Routine) => void;
     deleteRoutine: (id: number) => void;
     deleteMemberAndRoutines: (id: number) => void;
     
-    // Team Actions
     addTeam: (name: string) => void;
     updateTeam: (id: number, updates: Partial<Pick<Team, 'name'>>) => void;
     deleteTeam: (id: number) => void;
+    
+    handleToggleTask: (routineId: number, taskId: number) => void;
 
-    // Data Management
     loadSampleData: (skipConfirmation?: boolean) => void;
     importData: (jsonString: string) => void;
     exportData: (selection: { [key: string]: boolean }) => void;
@@ -39,9 +45,30 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [members, setMembers] = usePersistentState<Member[]>('members', []);
     const [routines, setRoutines] = usePersistentState<Routine[]>('routines', []);
     const [teams, setTeams] = usePersistentState<Team[]>('teams', []);
+    const [completedTasks, setCompletedTasks] = usePersistentState<Record<number, number[]>>('completedTasks', {});
     const { addToast } = useToast();
 
-    // --- Member Actions ---
+    const handleToggleTask = useCallback((routineId: number, taskId: number) => {
+        setCompletedTasks(prev => {
+            const newCompletedState = { ...prev };
+            const completedTasksForRoutine = new Set(newCompletedState[routineId] || []);
+    
+            if (completedTasksForRoutine.has(taskId)) {
+                completedTasksForRoutine.delete(taskId);
+            } else {
+                completedTasksForRoutine.add(taskId);
+            }
+    
+            if (completedTasksForRoutine.size === 0) {
+                delete newCompletedState[routineId];
+            } else {
+                newCompletedState[routineId] = Array.from(completedTasksForRoutine);
+            }
+    
+            return newCompletedState;
+        });
+      }, [setCompletedTasks]);
+
     const addMember = useCallback((details: { name: string; phone: string; timezone: string; teamId?: number; }) => {
         if (details.name.trim() === '') {
             addToast('Member name cannot be empty.', 'error');
@@ -54,26 +81,25 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             timezone: details.timezone,
             teamId: details.teamId,
             role: 'Member',
-            password: 'password'
+            password: 'password',
+            shareData: true,
         };
         setMembers(prev => [...prev, newMember]);
         addToast(`Member "${details.name.trim()}" created.`, 'success');
     }, [setMembers, addToast]);
 
-    const updateMember = useCallback((id: number, updates: Partial<Pick<Member, 'name' | 'role' | 'teamId' | 'phone' | 'timezone'>>) => {
+    const updateMember = useCallback((id: number, updates: Partial<Pick<Member, 'name' | 'role' | 'teamId' | 'phone' | 'timezone' | 'shareData'>>) => {
         setMembers(prev => prev.map(m => {
             if (m.id === id) {
                 const updatedMember = { ...m, ...updates };
-                // Ensure name is trimmed if provided and not empty
                 if (updates.name) {
                     const trimmedName = updates.name.trim();
                     if (trimmedName === '') {
                         addToast('Member name cannot be empty.', 'error');
-                        return m; // Revert to original if name is empty
+                        return m;
                     }
                     updatedMember.name = trimmedName;
                 }
-                 // Handle teamId being set to undefined (unassigned)
                 if ('teamId' in updates && updates.teamId === undefined) {
                     delete updatedMember.teamId;
                 }
@@ -82,8 +108,29 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             return m;
         }));
     }, [setMembers, addToast]);
+    
+    const changePassword = useCallback((memberId: number, currentPass: string, newPass: string): boolean => {
+        let success = false;
+        setMembers(prev => {
+            const memberToUpdate = prev.find(m => m.id === memberId);
+            if (memberToUpdate?.password !== currentPass) {
+                addToast("Current password does not match.", 'error');
+                success = false;
+                return prev;
+            }
+            if (newPass.length < 6) {
+                addToast("New password must be at least 6 characters.", 'warning');
+                success = false;
+                return prev;
+            }
+            
+            success = true;
+            addToast("Password changed successfully.", 'success');
+            return prev.map(m => m.id === memberId ? { ...m, password: newPass } : m);
+        });
+        return success;
+    }, [setMembers, addToast]);
 
-    // --- Routine Actions ---
     const addRoutine = useCallback((routine: Omit<Routine, 'id'>) => {
         const newRoutine = { ...routine, id: Date.now() };
         setRoutines(prev => [...prev, newRoutine]);
@@ -99,20 +146,15 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setRoutines(prev => prev.filter(r => r.id !== id));
     }, [setRoutines]);
     
-    // --- Combined Actions ---
     const deleteMemberAndRoutines = useCallback((memberId: number) => {
         setMembers(prev => prev.filter(m => m.id !== memberId));
         setRoutines(prev => prev.filter(r => r.memberId !== memberId));
         addToast('Member and their items have been deleted.', 'success');
     }, [setMembers, setRoutines, addToast]);
 
-    // --- Team Actions ---
     const addTeam = useCallback((name: string) => {
         if (name.trim() === '') return;
-        const newTeam: Team = {
-            id: Date.now(),
-            name: name.trim(),
-        };
+        const newTeam: Team = { id: Date.now(), name: name.trim() };
         setTeams(prev => [...prev, newTeam]);
         addToast(`Team "${name.trim()}" created.`, 'success');
     }, [setTeams, addToast]);
@@ -125,59 +167,49 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     const deleteTeam = useCallback((id: number) => {
         const teamName = teams.find(t => t.id === id)?.name;
-        // First, unassign all members from this team
         setMembers(prev => prev.map(m => m.teamId === id ? { ...m, teamId: undefined } : m));
-        // Then, delete the team
         setTeams(prev => prev.filter(t => t.id !== id));
         if(teamName) addToast(`Team "${teamName}" and its member assignments have been removed.`, 'success');
     }, [setTeams, setMembers, teams, addToast]);
 
-
-    // --- Data Management ---
     const loadSampleData = useCallback((skipConfirmation = false) => {
         const confirmed = skipConfirmation || window.confirm('This will replace all current data. Are you sure?');
         if (confirmed) {
             setTeams(sampleData.teams);
             setMembers(sampleData.members);
             setRoutines(sampleData.routines);
-            if (!skipConfirmation) {
-              addToast('Sample data loaded!', 'success');
-            }
+            setCompletedTasks({});
+            if (!skipConfirmation) addToast('Sample data loaded!', 'success');
         }
-    }, [setTeams, setMembers, setRoutines, addToast]);
+    }, [setTeams, setMembers, setRoutines, setCompletedTasks, addToast]);
 
     const importData = useCallback((jsonString: string) => {
-        if (!window.confirm('This will replace all current data with the imported data. Are you sure?')) {
-            return;
-        }
+        if (!window.confirm('This will replace all current data with the imported data. Are you sure?')) return;
         try {
             const data = JSON.parse(jsonString);
             const validationError = validateImportData(data);
-            if (validationError) {
-                throw new Error(validationError);
-            }
+            if (validationError) throw new Error(validationError);
             setTeams(data.teams || []);
             setMembers(data.members || []);
             setRoutines(data.routines || []);
+            setCompletedTasks({});
             addToast('Data imported successfully!', 'success');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Invalid JSON file.';
             addToast(message, 'error');
             console.error("Failed to import data:", error);
         }
-    }, [setTeams, setMembers, setRoutines, addToast]);
+    }, [setTeams, setMembers, setRoutines, setCompletedTasks, addToast]);
     
     const exportData = useCallback((selection: { [key: string]: boolean }) => {
         const dataToExport: { [key: string]: any } = {};
         if (selection.teams) dataToExport.teams = teams;
         if (selection.members) dataToExport.members = members;
-        // Filter routines/events based on selection
         const routinesToExport = routines.filter(r => 
             (selection.routines && (r.tags.includes('Routine') || r.tags.includes('Task') || r.tags.includes('Payment'))) ||
             (selection.events && r.tags.includes('Event'))
         );
         dataToExport.routines = routinesToExport;
-
         const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(dataToExport, null, 2))}`;
         const link = document.createElement("a");
         link.href = jsonString;
@@ -185,17 +217,22 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         link.click();
     }, [teams, members, routines]);
 
-
     const value = useMemo(() => ({
-        members, routines, teams,
-        setRoutines, addMember, updateMember, addRoutine, updateRoutine, deleteRoutine, deleteMemberAndRoutines,
+        members, routines, teams, completedTasks,
+        setMembers, setRoutines, setTeams,
+        addMember, updateMember, changePassword,
+        addRoutine, updateRoutine, deleteRoutine, deleteMemberAndRoutines,
+        addTeam, updateTeam, deleteTeam,
+        handleToggleTask,
         loadSampleData, importData, exportData,
-        addTeam, updateTeam, deleteTeam
     }), [
-        members, routines, teams, 
-        setRoutines, addMember, updateMember, addRoutine, updateRoutine, deleteRoutine, deleteMemberAndRoutines, 
+        members, routines, teams, completedTasks,
+        setMembers, setRoutines, setTeams,
+        addMember, updateMember, changePassword,
+        addRoutine, updateRoutine, deleteRoutine, deleteMemberAndRoutines,
+        addTeam, updateTeam, deleteTeam,
+        handleToggleTask,
         loadSampleData, importData, exportData,
-        addTeam, updateTeam, deleteTeam
     ]);
 
     return (

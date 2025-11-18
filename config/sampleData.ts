@@ -15,15 +15,7 @@ export const sampleData: {
     // Executive Team
     { id: 1, name: "Alex Chen", teamId: 10, role: "Owner", password: "password", phone: "+1-202-555-0101", timezone: "America/New_York", shareData: true },
     { 
-      id: 2, name: "Brenda Vance", teamId: 10, role: "Admin", password: "password", phone: "+1-310-555-0102", timezone: "America/Los_Angeles", shareData: true,
-      personalization: {
-        theme: 'beach',
-        accentColor: '#f43f5e',
-        clockLayout: 'minimalist',
-        clockEffects: { sweepingSecondHand: false, parallax: false, glint: false },
-        startOfWeek: 'monday',
-        animationSpeed: 1.5,
-      }
+      id: 2, name: "Brenda Vance", teamId: 10, role: "Admin", password: "password", phone: "+1-310-555-0102", timezone: "America/Los_Angeles", shareData: true
     },
     
     // Engineering Team

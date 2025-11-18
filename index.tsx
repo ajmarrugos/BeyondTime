@@ -12,8 +12,7 @@ import { DragStateProvider } from './contexts/DragStateContext';
 import { ToastProvider } from './contexts/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { NotificationProvider } from './contexts/NotificationContext';
-import { MembersProvider } from './contexts/MembersContext';
-import { RoutinesProvider } from './contexts/RoutinesContext';
+import { AppDataProvider } from './contexts/AppDataContext';
 
 
 const rootElement = document.getElementById('root');
@@ -27,27 +26,25 @@ root.render(
     <ErrorBoundary>
       <DeviceProvider>
         <ToastProvider>
-          <MembersProvider>
+          <AppDataProvider>
             <AuthProvider>
               <ThemeProvider>
-                <RoutinesProvider>
-                  <NotificationProvider>
-                    <SettingsPanelProvider>
-                      <ModalProvider>
-                        <DragStateProvider>
-                          <PermissionsProvider>
-                            <DeviceMotionProvider>
-                              <App />
-                            </DeviceMotionProvider>
-                          </PermissionsProvider>
-                        </DragStateProvider>
-                      </ModalProvider>
-                    </SettingsPanelProvider>
-                  </NotificationProvider>
-                </RoutinesProvider>
+                <NotificationProvider>
+                  <SettingsPanelProvider>
+                    <ModalProvider>
+                      <DragStateProvider>
+                        <PermissionsProvider>
+                          <DeviceMotionProvider>
+                            <App />
+                          </DeviceMotionProvider>
+                        </PermissionsProvider>
+                      </DragStateProvider>
+                    </ModalProvider>
+                  </SettingsPanelProvider>
+                </NotificationProvider>
               </ThemeProvider>
             </AuthProvider>
-          </MembersProvider>
+          </AppDataProvider>
         </ToastProvider>
       </DeviceProvider>
     </ErrorBoundary>

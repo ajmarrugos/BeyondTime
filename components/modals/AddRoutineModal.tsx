@@ -16,7 +16,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useModal } from '../../contexts/ModalContext';
 import { vibrate } from '../../utils/haptics';
-import { useRoutines } from '../../contexts/RoutinesContext';
+import { useAppData } from '../../contexts/AppDataContext';
 
 interface AddRoutineModalProps {
     isOpen: boolean;
@@ -95,7 +95,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
 const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ isOpen, onExited, ...props }) => {
     const { themeConfig } = useTheme();
     const { getAssignableMembers } = usePermissions();
-    const { addRoutine, updateRoutine } = useRoutines();
+    const { addRoutine, updateRoutine } = useAppData();
     const { editingRoutine, preselectedMemberId } = useModal();
     const { addToast } = useToast();
     const availableMembers = getAssignableMembers();

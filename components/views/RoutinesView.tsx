@@ -13,13 +13,9 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../contexts/ToastContext';
 import ViewSwitcher from '../ui/ViewSwitcher';
 import { vibrate } from '../../utils/haptics';
-import { useRoutines } from '../../contexts/RoutinesContext';
-import { useMembers } from '../../contexts/MembersContext';
+import { useAppData } from '../../contexts/AppDataContext';
 
-interface RoutinesViewProps {
-    completedTasks: Record<number, number[]>;
-    onToggleTask: (routineId: number, taskId: number) => void;
-}
+interface RoutinesViewProps {}
 
 const ROW_PADDING_BOTTOM = 12;
 const BASE_COLLAPSED_HEIGHT = 184;
@@ -29,14 +25,9 @@ const HEIGHT_PER_DESC_LINE = 20;
 const CHARS_PER_DESC_LINE = 45;
 const BUDGET_SECTION_HEIGHT = 70;
 
-const RoutinesView: React.FC<RoutinesViewProps> = ({ 
-    completedTasks,
-    onToggleTask
-}) => {
+const RoutinesView: React.FC<RoutinesViewProps> = () => {
     const { getVisibleRoutines } = usePermissions();
-    const { routines, setRoutines, deleteRoutine } = useRoutines();
-    const { members } = useMembers();
-
+    const { routines, setRoutines, deleteRoutine, completedTasks, handleToggleTask: onToggleTask, members } = useAppData();
     const { openRoutineModal, openRoutineModalForEdit, confirm } = useModal();
     const { setIsDraggingRoutine } = useDragState();
     const { canDeleteRoutine, canEditRoutine } = usePermissions();

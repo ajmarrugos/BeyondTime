@@ -10,13 +10,11 @@ import {
     canManageRoutineSelector,
     getAssignableMembersSelector
 } from '../utils/permissions';
-import { useMembers } from '../contexts/MembersContext';
-import { useRoutines } from '../contexts/RoutinesContext';
+import { useAppData } from '../contexts/AppDataContext';
 
 export const usePermissions = () => {
     const { currentUser } = useAuth();
-    const { members } = useMembers();
-    const { routines } = useRoutines();
+    const { members, routines } = useAppData();
     const { permissions } = usePermissionsContext();
 
     const userPermissions = useMemo(() => {

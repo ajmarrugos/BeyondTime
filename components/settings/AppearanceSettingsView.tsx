@@ -1,7 +1,6 @@
 
 
 import React from 'react';
-// FIX: Import ClockLayout, ClockEffects, and StartOfWeek from types/index.ts, not ThemeContext.
 import { useTheme } from '../../contexts/ThemeContext';
 import { ClockLayout, ClockEffects, StartOfWeek } from '../../types';
 import { lightThemeOptions, darkThemeOptions } from '../../config/themes';

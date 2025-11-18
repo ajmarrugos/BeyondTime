@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import usePersistentState from '../hooks/usePersistentState';
-import { Member, Team, PersonalizationSettings } from '../types';
+import { Member, Team } from '../types';
 import { useToast } from './ToastContext';
 
 interface MembersContextType {
@@ -9,7 +9,7 @@ interface MembersContextType {
     teams: Team[];
     setTeams: (teams: Team[] | ((prev: Team[]) => Team[])) => void;
     addMember: (details: { name: string; phone: string; timezone: string; teamId?: number; }) => void;
-    updateMember: (id: number, updates: Partial<Pick<Member, 'name' | 'role' | 'teamId' | 'phone' | 'timezone' | 'shareData' | 'personalization'>>) => void;
+    updateMember: (id: number, updates: Partial<Pick<Member, 'name' | 'role' | 'teamId' | 'phone' | 'timezone' | 'shareData'>>) => void;
     addTeam: (name: string) => void;
     updateTeam: (id: number, updates: Partial<Pick<Team, 'name'>>) => void;
     deleteTeam: (id: number) => void;
@@ -42,7 +42,7 @@ export const MembersProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addToast(`Member "${details.name.trim()}" created.`, 'success');
     }, [setMembers, addToast]);
 
-    const updateMember = useCallback((id: number, updates: Partial<Pick<Member, 'name' | 'role' | 'teamId' | 'phone' | 'timezone' | 'shareData' | 'personalization'>>) => {
+    const updateMember = useCallback((id: number, updates: Partial<Pick<Member, 'name' | 'role' | 'teamId' | 'phone' | 'timezone' | 'shareData'>>) => {
         setMembers(prev => prev.map(m => {
             if (m.id === id) {
                 const updatedMember = { ...m, ...updates };
@@ -56,9 +56,6 @@ export const MembersProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 }
                 if ('teamId' in updates && updates.teamId === undefined) {
                     delete updatedMember.teamId;
-                }
-                if ('personalization' in updates && updates.personalization === undefined) {
-                    delete (updatedMember as Partial<Member>).personalization;
                 }
                 return updatedMember;
             }

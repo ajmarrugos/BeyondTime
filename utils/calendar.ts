@@ -1,6 +1,5 @@
 
 
-// FIX: Import StartOfWeek from types/index.ts, not ThemeContext.
 import { Routine, StartOfWeek } from '../types';
 
 export const isRoutineOnDate = (routine: Routine, date: Date): boolean => {

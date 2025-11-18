@@ -15,14 +15,6 @@ export interface ClockEffects {
     parallax: boolean;
     glint: boolean;
 }
-export interface PersonalizationSettings {
-    theme: ThemeName;
-    accentColor: string;
-    clockLayout: ClockLayout;
-    clockEffects: ClockEffects;
-    startOfWeek: StartOfWeek;
-    animationSpeed: number;
-}
 
 
 export interface Member {
@@ -34,7 +26,6 @@ export interface Member {
   phone?: string;
   timezone?: string;
   shareData?: boolean;
-  personalization?: PersonalizationSettings;
 }
 
 export interface Task {

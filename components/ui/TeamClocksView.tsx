@@ -4,8 +4,7 @@ import { Member, Routine, Team } from '../../types';
 import ExpandableSection from './ExpandableSection';
 import MiniClock from './MiniClock';
 import { useAuth } from '../../contexts/AuthContext';
-import { useMembers } from '../../contexts/MembersContext';
-import { useRoutines } from '../../contexts/RoutinesContext';
+import { useAppData } from '../../contexts/AppDataContext';
 
 interface TeamClocksViewProps {
     time: Date;
@@ -17,8 +16,7 @@ interface TeamClocksViewProps {
 const TeamClocksView: React.FC<TeamClocksViewProps> = ({ time, onEditMember, onDeleteMember, onAddItemForMember }) => {
     const { currentUser } = useAuth();
     const { getManageableMembers } = usePermissions();
-    const { members, teams } = useMembers();
-    const { routines: allRoutines } = useRoutines();
+    const { teams, routines: allRoutines } = useAppData();
 
 
     if (currentUser?.role !== 'Admin' && currentUser?.role !== 'Owner') {

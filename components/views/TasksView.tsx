@@ -12,12 +12,10 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../contexts/ToastContext';
 import ViewSwitcher from '../ui/ViewSwitcher';
 import { vibrate } from '../../utils/haptics';
-import { useRoutines } from '../../contexts/RoutinesContext';
-import { useMembers } from '../../contexts/MembersContext';
+import { useAppData } from '../../contexts/AppDataContext';
 
 interface TasksViewProps {
-    completedTasks: Record<number, number[]>;
-    onToggleTask: (routineId: number, taskId: number) => void;
+    // FIX: Props are no longer needed as data is fetched from context.
 }
 
 const ROW_PADDING_BOTTOM = 12;
@@ -28,13 +26,10 @@ const HEIGHT_PER_DESC_LINE = 20;
 const CHARS_PER_DESC_LINE = 45;
 const BUDGET_SECTION_HEIGHT = 70;
 
-const TasksView: React.FC<TasksViewProps> = ({ 
-    completedTasks,
-    onToggleTask
-}) => {
+const TasksView: React.FC<TasksViewProps> = () => {
     const { getVisibleRoutines } = usePermissions();
-    const { routines, setRoutines, deleteRoutine } = useRoutines();
-    const { members } = useMembers();
+    // FIX: Consolidated data fetching to use the main AppDataContext for consistency.
+    const { routines, setRoutines, deleteRoutine, members, completedTasks, handleToggleTask: onToggleTask } = useAppData();
 
     const { openRoutineModal, openRoutineModalForEdit, confirm } = useModal();
     const { setIsDraggingRoutine } = useDragState();

@@ -12,19 +12,17 @@ interface RoutineDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     routine: Routine | null;
-    completedTasks: Record<number, number[]>;
-    onToggleTask: (routineId: number, taskId: number) => void;
+    // FIX: Props are no longer needed as data is fetched from context.
 }
 
 const RoutineDetailModal: React.FC<RoutineDetailModalProps> = ({
     isOpen,
     onClose,
     routine,
-    completedTasks,
-    onToggleTask,
 }) => {
     const { openRoutineModalForEdit, confirm } = useModal();
-    const { deleteRoutine } = useAppData();
+    // FIX: Consolidated data fetching to use the main AppDataContext.
+    const { deleteRoutine, completedTasks, handleToggleTask: onToggleTask } = useAppData();
     const { addToast } = useToast();
     const { canDeleteRoutine, canEditRoutine } = usePermissions();
 
