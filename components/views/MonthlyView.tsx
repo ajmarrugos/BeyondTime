@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo } from 'react';
 import { Routine } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -90,9 +89,13 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ routines }) => {
                         const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
 
                         return (
-                            <div key={index} className={`flex flex-col rounded-lg bg-black/10 p-1.5 overflow-hidden transition-opacity duration-300 ${isCurrentMonth ? 'opacity-100' : 'opacity-40'} min-h-[12vh]`}>
+                            <div key={index} className={`flex flex-col rounded-lg bg-black/10 p-1.5 overflow-hidden transition-opacity duration-300 border ${isToday ? 'border-accent' : 'border-transparent'} ${isCurrentMonth ? 'opacity-100' : 'opacity-40'} min-h-[12vh]`}>
                                 <div className="flex-shrink-0 text-center mb-1">
-                                    <span className={`text-xs font-medium ${isToday ? 'bg-accent text-white rounded-full w-5 h-5 inline-flex items-center justify-center' : themeConfig.textColor}`}>{day.getDate()}</span>
+                                    <span 
+                                        className={`text-xs font-medium ${themeConfig.textColor}`}
+                                    >
+                                        {day.getDate()}
+                                    </span>
                                 </div>
                                 <div className="flex-1 flex flex-wrap gap-1 content-start overflow-y-auto p-1 -m-1">
                                     {items.map(item => (
