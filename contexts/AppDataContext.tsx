@@ -1,9 +1,7 @@
 
-
 import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import usePersistentState from '../hooks/usePersistentState';
 import { Member, Routine, Team } from '../types';
-import { sampleData } from '../config/sampleData';
 import { validateImportData } from '../utils/validation';
 import { useToast } from './ToastContext';
 
@@ -34,7 +32,7 @@ interface AppDataContextType {
     
     handleToggleTask: (routineId: number, taskId: number) => void;
 
-    loadSampleData: (skipConfirmation?: boolean) => void;
+    fetchRemoteData: () => Promise<void>;
     importData: (jsonString: string) => void;
     exportData: (selection: { [key: string]: boolean }) => void;
 }
@@ -172,16 +170,26 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if(teamName) addToast(`Team "${teamName}" and its member assignments have been removed.`, 'success');
     }, [setTeams, setMembers, teams, addToast]);
 
-    const loadSampleData = useCallback((skipConfirmation = false) => {
-        const confirmed = skipConfirmation || window.confirm('This will replace all current data. Are you sure?');
-        if (confirmed) {
-            setTeams(sampleData.teams);
-            setMembers(sampleData.members);
-            setRoutines(sampleData.routines);
-            setCompletedTasks({});
-            if (!skipConfirmation) addToast('Sample data loaded!', 'success');
+    const fetchRemoteData = useCallback(async () => {
+        try {
+            const response = await fetch('https://lyndsey-supersweet-greatheartedly.ngrok-free.dev/webhook-test/data', {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            if (!response.ok) throw new Error('Failed to fetch data');
+            const data = await response.json();
+            
+            if (data.teams) setTeams(data.teams);
+            if (data.members) setMembers(data.members);
+            if (data.routines) setRoutines(data.routines);
+            
+            addToast('Data synced successfully.', 'success');
+        } catch (error) {
+            console.error('Sync failed', error);
+            addToast('Failed to sync data from server.', 'error');
         }
-    }, [setTeams, setMembers, setRoutines, setCompletedTasks, addToast]);
+    }, [setTeams, setMembers, setRoutines, addToast]);
 
     const importData = useCallback((jsonString: string) => {
         if (!window.confirm('This will replace all current data with the imported data. Are you sure?')) return;
@@ -224,7 +232,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addRoutine, updateRoutine, deleteRoutine, deleteMemberAndRoutines,
         addTeam, updateTeam, deleteTeam,
         handleToggleTask,
-        loadSampleData, importData, exportData,
+        fetchRemoteData, importData, exportData,
     }), [
         members, routines, teams, completedTasks,
         setMembers, setRoutines, setTeams,
@@ -232,7 +240,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addRoutine, updateRoutine, deleteRoutine, deleteMemberAndRoutines,
         addTeam, updateTeam, deleteTeam,
         handleToggleTask,
-        loadSampleData, importData, exportData,
+        fetchRemoteData, importData, exportData,
     ]);
 
     return (

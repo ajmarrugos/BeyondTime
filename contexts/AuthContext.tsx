@@ -1,11 +1,13 @@
+
 import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import usePersistentState from '../hooks/usePersistentState';
 import { Member } from '../types';
 import { useAppData } from './AppDataContext';
+import { useToast } from './ToastContext';
 
 interface AuthContextType {
     currentUser: Member | null;
-    login: (name: string, password: string) => boolean;
+    login: (name: string, password: string) => Promise<boolean>;
     logout: () => void;
 }
 
@@ -13,24 +15,46 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [currentUserId, setCurrentUserId] = usePersistentState<number | null>('currentUserId', null);
-    const { members } = useAppData();
+    const { members, fetchRemoteData } = useAppData();
+    const { addToast } = useToast();
 
     const currentUser = useMemo(() => {
         if (currentUserId === null) return null;
-        // This derived state ensures that if the member's data is updated
-        // elsewhere, the currentUser object here will reflect those changes instantly.
         return members.find(m => m.id === currentUserId) ?? null;
     }, [currentUserId, members]);
 
-    const login = useCallback((name: string, password: string): boolean => {
-        const user = members.find(m => m.name === name);
-        if (user && user.password === password) {
-            setCurrentUserId(user.id);
-            return true;
+    const login = useCallback(async (name: string, password: string): Promise<boolean> => {
+        try {
+            const response = await fetch('https://lyndsey-supersweet-greatheartedly.ngrok-free.dev/webhook-test/login', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                body: JSON.stringify({ username: name, password: password }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.user) {
+                setCurrentUserId(data.user.id);
+                // Sync all data upon successful login
+                await fetchRemoteData();
+                return true;
+            } else {
+                return false;
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+            // If it's a NetworkError, it's often CORS preflight failure
+            addToast('Login failed. Please check your internet connection.', 'error');
+            return false;
         }
-        setCurrentUserId(null);
-        return false;
-    }, [members, setCurrentUserId]);
+    }, [setCurrentUserId, fetchRemoteData, addToast]);
 
     const logout = useCallback(() => {
         setCurrentUserId(null);

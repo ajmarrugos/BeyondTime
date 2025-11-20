@@ -5,7 +5,7 @@
   "main": "index.tsx",
   "scripts": {
     "build": "esbuild index.tsx --bundle --outfile=dist/bundle.js --jsx=automatic --minify && cp index.html dist/index.html",
-    "dev": "live-server --entry-file=index.html"
+    "dev": "mkdir -p dist && cp index.html dist/index.html && esbuild index.tsx --bundle --outfile=dist/bundle.js --jsx=automatic --servedir=dist"
   },
   "keywords": [
     "react",
@@ -16,8 +16,8 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

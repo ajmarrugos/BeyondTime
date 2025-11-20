@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import ToggleSwitch from '../forms/ToggleSwitch';
@@ -6,7 +7,7 @@ import { useAppData } from '../../contexts/AppDataContext';
 
 const IntegrationsDataView: React.FC = () => {
     const { themeConfig } = useTheme();
-    const { loadSampleData, importData, exportData } = useAppData();
+    const { importData, exportData } = useAppData();
     const dataFileInputRef = useRef<HTMLInputElement>(null);
 
     const [exportSelection, setExportSelection] = useState({
@@ -39,9 +40,8 @@ const IntegrationsDataView: React.FC = () => {
     return (
         <div className="overflow-y-auto h-full space-y-4">
             <ExpandableSection title="Data Management" defaultOpen={true}>
-                <p className={`text-sm mb-3 ${themeConfig.subtextColor}`}>Load, import, or export your application data.</p>
+                <p className={`text-sm mb-3 ${themeConfig.subtextColor}`}>Import or export your application data.</p>
                 <div className="space-y-2">
-                    <button onClick={() => loadSampleData()} className={`w-full p-3 rounded-xl font-semibold text-center ${themeConfig.textColor} bg-white/5 hover:bg-white/10 transition-colors`}>Load Sample Data</button>
                     <button onClick={handleImportClick} className={`w-full p-3 rounded-xl font-semibold text-center ${themeConfig.textColor} bg-white/5 hover:bg-white/10 transition-colors`}>Import from JSON</button>
                     <input type="file" ref={dataFileInputRef} onChange={handleDataFileChange} accept=".json" className="hidden" />
                 </div>

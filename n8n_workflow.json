@@ -1,0 +1,148 @@
+{
+  "name": "BeyondTime API",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "login",
+        "options": {}
+      },
+      "name": "Webhook: Login",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        380,
+        240
+      ],
+      "webhookId": "login"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "data",
+        "options": {}
+      },
+      "name": "Webhook: Get Data",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        380,
+        440
+      ],
+      "webhookId": "data"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Mock Database - Users\nconst users = [\n  { id: 1, name: \"Alex Chen\", teamId: 10, role: \"Owner\", password: \"password\", phone: \"+1-202-555-0101\", timezone: \"America/New_York\", shareData: true },\n  { id: 2, name: \"Brenda Vance\", teamId: 10, role: \"Admin\", password: \"password\", phone: \"+1-310-555-0102\", timezone: \"America/Los_Angeles\", shareData: true },\n  { id: 3, name: \"Charlie Davis\", teamId: 20, role: \"Member\", password: \"password\", phone: \"+44-20-7946-0103\", timezone: \"Europe/London\", shareData: true }\n];\n\nconst { username, password } = items[0].json.body;\n\nconst user = users.find(u => u.name === username && u.password === password);\n\nif (user) {\n  return [{ json: { success: true, user } }];\n} else {\n  return [{ json: { success: false, message: \"Invalid credentials\" } }];\n}"
+      },
+      "name": "Validate Credentials",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        600,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "responseCode": 200,
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond Login",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        820,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Mock Database - Full Data\nreturn [{\n  json: {\n    teams: [\n      { id: 10, name: \"Executive\" },\n      { id: 20, name: \"Engineering\" },\n      { id: 30, name: \"Marketing\" },\n      { id: 40, name: \"Design\" }\n    ],\n    members: [\n      { id: 1, name: \"Alex Chen\", teamId: 10, role: \"Owner\", password: \"password\", phone: \"+1-202-555-0101\", timezone: \"America/New_York\", shareData: true },\n      { id: 2, name: \"Brenda Vance\", teamId: 10, role: \"Admin\", password: \"password\", phone: \"+1-310-555-0102\", timezone: \"America/Los_Angeles\", shareData: true },\n      { id: 3, name: \"Charlie Davis\", teamId: 20, role: \"Member\", password: \"password\", phone: \"+44-20-7946-0103\", timezone: \"Europe/London\", shareData: true }\n    ],\n    routines: [\n      { id: 1, name: \"New Year's Day\", memberId: 1, description: \"Company-wide holiday.\", tags: [\"Event\", \"Holiday\"], color: \"#ef4444\", icon: \"M20 12V20H4V12M20 8H4L12 12L20 8ZM12 4H15C16.1046 4 17 4.89543 17 6C17 7.10457 16.1046 8 15 8H9C7.89543 8 7 7.10457 7 6C7 4.89543 7.89543 4 9 4H12Z\", autoLive: false, repetition: \"Annually\", annualDates: [\"2024-01-01\"], startTime: \"00:00\", endTime: \"23:59\", tasks: [], notifications: { enabled: false, notifyBefore: 0, notifyAtStart: false, notifyAtEnd: false } },\n      { id: 201, name: \"Executive Sync\", memberId: 1, description: \"Daily high-level planning.\", tags: [\"Routine\", \"Work\"], color: \"#14b8a6\", icon: \"M14 6V4C14 2.89543 13.1046 2 12 2H10C8.89543 2 8 2.89543 8 4V6H4V20H20V6H14ZM10 4H12V6H10V4Z\", autoLive: true, repetition: \"Weekly\", weekdays: [1,2,3,4,5], startTime: \"09:00\", endTime: \"09:30\", tasks: [], notifications: { enabled: true, notifyBefore: 5, notifyAtStart: true, notifyAtEnd: false } }\n    ]\n  }\n}];"
+      },
+      "name": "Fetch Full Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        600,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond Data",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        820,
+        440
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook: Login": {
+      "main": [
+        [
+          {
+            "node": "Validate Credentials",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Credentials": {
+      "main": [
+        [
+          {
+            "node": "Respond Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Get Data": {
+      "main": [
+        [
+          {
+            "node": "Fetch Full Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Full Data": {
+      "main": [
+        [
+          {
+            "node": "Respond Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
